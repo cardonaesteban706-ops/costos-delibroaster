@@ -1,0 +1,42 @@
+.modal-overlay {
+  position: fixed; inset: 0; z-index: 50;
+  background: rgba(44, 26, 20, 0.42);
+  display: grid; place-items: center; padding: 24px;
+  animation: fade 0.12s ease;
+}
+@keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+
+.modal-card {
+  width: 100%; background: var(--card); border-radius: var(--radius-lg);
+  box-shadow: 0 24px 60px rgba(44, 26, 20, 0.25);
+  max-height: 90vh; overflow-y: auto;
+}
+.modal-head { display: flex; justify-content: space-between; align-items: flex-start; padding: 24px 26px 0; }
+.modal-title { font-size: 1.5rem; }
+.modal-sub { color: var(--ink-soft); margin-top: 5px; font-size: 0.9rem; }
+.modal-x { font-size: 1rem; color: var(--ink-faint); width: 34px; height: 34px; border-radius: 9px; }
+.modal-x:hover { background: var(--cream-soft); color: var(--ink); }
+.modal-body { padding: 20px 26px 26px; }
+
+/* campos de formulario reutilizables */
+.f-group { margin-bottom: 16px; }
+.f-label { display: block; font-size: 0.8rem; font-weight: 600; color: var(--ink-soft); margin-bottom: 7px; }
+.f-input, .f-select {
+  width: 100%; height: 48px; padding: 0 14px; background: var(--cream-soft);
+  border: 1.5px solid var(--hairline); border-radius: var(--radius); color: var(--ink);
+  transition: border-color 0.12s, box-shadow 0.12s;
+}
+.f-select { cursor: pointer; }
+.f-input:focus, .f-select:focus { outline: none; border-color: var(--brick); box-shadow: 0 0 0 3px rgba(162, 51, 31, 0.1); }
+.f-hint { font-size: 0.82rem; color: var(--ink-faint); margin-top: 6px; }
+.f-row { display: flex; gap: 12px; }
+.f-row > * { flex: 1; }
+
+.f-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 22px; }
+
+.calc-box {
+  margin-top: 4px; padding: 12px 14px; background: var(--cream-soft);
+  border-radius: var(--radius); border: 1px solid var(--hairline-soft);
+  font-size: 0.9rem; color: var(--ink-soft);
+}
+.calc-box b { color: var(--ink); font-family: var(--font-display); }

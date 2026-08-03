@@ -1,0 +1,53 @@
+:root {
+  /* Paleta Delibroaster (tomada de los mockups) */
+  --brick:        #A2331F;
+  --brick-bright: #B23A24;
+  --brick-dark:   #7A2416;
+  --brick-deep:   #5E1B10;
+  --cream:        #F4ECDE;
+  --cream-soft:   #F7F0E4;
+  --card:         #FDFAF3;
+  --coffee:       #241A15;
+  --coffee-soft:  #2E231C;
+  --amber:        #E9A23C;
+  --amber-soft:   #F4D9A8;
+  --ink:          #2C2420;
+  --ink-soft:     #6E6055;
+  --ink-faint:    #9A8A7C;
+  --green:        #3E7B3B;
+  --green-soft:   #E8F0DD;
+  --warn:         #C77F1E;
+  --warn-soft:    #F8E9CE;
+  --hairline:     rgba(44, 36, 32, 0.10);
+  --hairline-soft:rgba(44, 36, 32, 0.06);
+  --radius:       14px;
+  --radius-lg:    20px;
+  --font-display: 'Fraunces', Georgia, serif;
+  --font-body:    'Inter', system-ui, sans-serif;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body, #root { height: 100%; }
+
+body {
+  font-family: var(--font-body);
+  background: var(--cream);
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+h1, h2, h3 { font-family: var(--font-display); font-weight: 600; line-height: 1.05; }
+
+a { color: inherit; }
+
+input, button { font-family: inherit; font-size: 1rem; }
+
+button { cursor: pointer; border: none; background: none; }
+
+::placeholder { color: var(--ink-faint); }
+
+/* util */
+.spin { animation: spin 0.7s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }

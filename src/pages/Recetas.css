@@ -1,0 +1,24 @@
+.rec-card {
+  background: var(--card); border: 1px solid var(--hairline); border-radius: var(--radius);
+  padding: 18px 22px; margin-bottom: 12px; transition: border-color 0.12s;
+}
+.rec-card:hover { border-color: var(--ink-faint); }
+.rec-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 14px; }
+.rec-name { font-family: var(--font-display); font-weight: 600; font-size: 1.25rem; color: var(--ink); }
+.rec-cat { font-size: 0.84rem; color: var(--ink-soft); margin-top: 2px; }
+.rec-count { font-size: 0.82rem; color: var(--ink-faint); }
+.rec-edit { height: 38px; padding: 0 16px; border-radius: 10px; background: transparent; border: 1.5px solid var(--hairline); color: var(--brick); font-weight: 500; }
+.rec-edit:hover { border-color: var(--brick); }
+.rec-rinde { display: inline-block; margin-top: 8px; background: var(--cream-soft); border: 1px solid var(--hairline-soft); border-radius: 999px; padding: 3px 12px; font-size: 0.8rem; color: var(--ink-soft); }
+
+/* editor de componentes */
+.comp-list { margin: 6px 0 4px; }
+.comp-row { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
+.comp-row .f-select { flex: 2; height: 44px; margin: 0; }
+.comp-row .f-input { flex: 1; height: 44px; margin: 0; }
+.comp-unit { font-size: 0.85rem; color: var(--ink-soft); min-width: 34px; }
+.comp-del { width: 40px; height: 44px; border-radius: 10px; color: var(--ink-faint); flex-shrink: 0; }
+.comp-del:hover { background: #F7E4DF; color: #8A2417; }
+.comp-add { margin-top: 4px; background: transparent; color: var(--brick); font-weight: 500; font-size: 0.9rem; padding: 8px 0; }
+.comp-add:hover { text-decoration: underline; }
+.comp-empty { color: var(--ink-faint); font-size: 0.9rem; padding: 8px 0; }
