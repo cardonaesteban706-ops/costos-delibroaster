@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+﻿import { useEffect, useMemo, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import Layout from '../components/Layout'
 import Modal from '../components/Modal'
@@ -6,11 +6,9 @@ import { pesos } from '../lib/formato'
 import './Tablero.css'
 
 const MARGEN_SANO = 0.30
-const DIEZ_MIN = 10 * 60 * 1000
 
 export default function Tablero() {
   const [conteos, setConteos] = useState({})
-  const [desbloqueado, setDesbloqueado] = useState(false)
   const [platos, setPlatos] = useState(null) // null = aún no cargado
   const [editando, setEditando] = useState(null)
 
@@ -26,19 +24,12 @@ export default function Tablero() {
     c()
   }, [])
 
-  // vuelve a bloquear sola a los 10 minutos
-  useEffect(() => {
-    if (!desbloqueado) return
-    const t = setTimeout(() => setDesbloqueado(false), DIEZ_MIN)
-    return () => clearTimeout(t)
-  }, [desbloqueado])
-
   async function cargarPlatos() {
     const { data, error } = await supabase.rpc('costeo_tablero')
     if (!error) setPlatos(data || [])
   }
 
-  useEffect(() => { if (desbloqueado) cargarPlatos() }, [desbloqueado])
+  useEffect(() => { cargarPlatos() }, [])
 
   const resumen = useMemo(() => {
     if (!platos || platos.length === 0) return { n: 0, margenProm: 0, bajos: 0 }
@@ -57,52 +48,37 @@ export default function Tablero() {
           <h1 className="main-title">Tablero de costos</h1>
           <p className="main-sub">Costo, margen y precio sugerido de cada plato.</p>
         </div>
-        <div className="head-actions">
-          <span className={'lock-banner' + (desbloqueado ? ' abierto' : '')}>
-            <span className="lock-dot" />
-            {desbloqueado ? 'Costos visibles · sesión de dirección' : 'Zona sensible bloqueada'}
-          </span>
-          {desbloqueado && <button className="btn btn-ghost" onClick={() => setDesbloqueado(false)}>Bloquear</button>}
-        </div>
       </div>
 
-      <div className="blur-wrap" style={{ marginTop: 22 }}>
-        <div className={desbloqueado ? '' : 'blur-content'}>
-          <div className="resumen-grid">
-            <div className="resumen-card">
-              <div className="resumen-lbl">Platos en carta</div>
-              <div className="resumen-num">{resumen.n}</div>
-              <div className="resumen-sub">todos con receta y costo vigente</div>
-            </div>
-            <div className="resumen-card oscura">
-              <div className="resumen-lbl">Margen promedio</div>
-              <div className="resumen-num">{Math.round(resumen.margenProm * 100)}%</div>
-              <div className="resumen-sub">sobre los platos con precio de venta</div>
-            </div>
-            <div className={'resumen-card' + (resumen.bajos > 0 ? ' alerta' : '')}>
-              <div className="resumen-lbl">Bajo el margen sano</div>
-              <div className="resumen-num">{resumen.bajos}</div>
-              <div className="resumen-sub">platos por debajo del {Math.round(MARGEN_SANO * 100)}%</div>
-            </div>
+      <div style={{ marginTop: 22 }}>
+        <div className="resumen-grid">
+          <div className="resumen-card">
+            <div className="resumen-lbl">Platos en carta</div>
+            <div className="resumen-num">{resumen.n}</div>
+            <div className="resumen-sub">todos con receta y costo vigente</div>
           </div>
-
-          <div className="platos-head">
-            <span className="platos-lbl">Platos · ordenados por margen</span>
-            <span className="margen-sano-lbl">Margen sano: ≥ {Math.round(MARGEN_SANO * 100)}%</span>
+          <div className="resumen-card oscura">
+            <div className="resumen-lbl">Margen promedio</div>
+            <div className="resumen-num">{Math.round(resumen.margenProm * 100)}%</div>
+            <div className="resumen-sub">sobre los platos con precio de venta</div>
           </div>
-
-          <div className="platos-grid">
-            {(platos || muestra).slice().sort((a, b) => (a.margen ?? -1) - (b.margen ?? -1)).map((p) => (
-              <PlatoCard key={p.id ?? p.nombre} plato={p} onEditar={p.id ? () => setEditando(p) : null} />
-            ))}
+          <div className={'resumen-card' + (resumen.bajos > 0 ? ' alerta' : '')}>
+            <div className="resumen-lbl">Bajo el margen sano</div>
+            <div className="resumen-num">{resumen.bajos}</div>
+            <div className="resumen-sub">platos por debajo del {Math.round(MARGEN_SANO * 100)}%</div>
           </div>
         </div>
 
-        {!desbloqueado && (
-          <div className="lock-overlay">
-            <ClaveForm onOk={() => setDesbloqueado(true)} />
-          </div>
-        )}
+        <div className="platos-head">
+          <span className="platos-lbl">Platos · ordenados por margen</span>
+          <span className="margen-sano-lbl">Margen sano: ≥ {Math.round(MARGEN_SANO * 100)}%</span>
+        </div>
+
+        <div className="platos-grid">
+          {(platos || []).slice().sort((a, b) => (a.margen ?? -1) - (b.margen ?? -1)).map((p) => (
+            <PlatoCard key={p.id ?? p.nombre} plato={p} onEditar={p.id ? () => setEditando(p) : null} />
+          ))}
+        </div>
       </div>
 
       {editando && (
@@ -112,12 +88,6 @@ export default function Tablero() {
     </Layout>
   )
 }
-
-// datos de muestra solo para que la pantalla no se vea vacía detrás del blur
-const muestra = [
-  { nombre: 'Personal #8', categoria: 'Comida china', costo: 21553, precio_venta: 27000, margen: 0.2017, sugerido_40: 35922 },
-  { nombre: 'Pollo broaster', categoria: 'Broaster', costo: 27981, precio_venta: 46000, margen: 0.3917, sugerido_40: 46635 },
-]
 
 function categoriaMargen(m) {
   if (m == null) return 'ambar'
@@ -152,40 +122,6 @@ function PlatoCard({ plato, onEditar }) {
       <div className="plato-bar"><div className="plato-bar-fill" style={{ width: barra + '%' }} /></div>
       {onEditar && <button className="plato-edit" onClick={onEditar}>Precio de venta</button>}
     </div>
-  )
-}
-
-function ClaveForm({ onOk }) {
-  const [clave, setClave] = useState('')
-  const [error, setError] = useState('')
-  const [verificando, setVerificando] = useState(false)
-
-  async function verificar(e) {
-    e.preventDefault()
-    setError('')
-    setVerificando(true)
-    const { data, error } = await supabase.rpc('costeo_verificar_clave', { p_clave: clave })
-    setVerificando(false)
-    if (error) return setError('No se pudo verificar. Intenta de nuevo.')
-    if (!data) { setError('Clave incorrecta.'); setClave(''); return }
-    onOk()
-  }
-
-  return (
-    <form className="lock-card" onSubmit={verificar}>
-      <div className="lock-icon">🔒</div>
-      <h2 className="lock-title">Zona sensible bloqueada</h2>
-      <p className="lock-sub">Costos, márgenes y precios sugeridos solo se ven con la clave de dirección.</p>
-      <input
-        className="lock-input" type="password" placeholder="Clave de dirección"
-        value={clave} onChange={(e) => setClave(e.target.value)} autoFocus
-      />
-      <button className="lock-btn" type="submit" disabled={verificando || !clave}>
-        {verificando ? 'Verificando…' : 'Desbloquear costos'}
-      </button>
-      {error && <div className="lock-err">{error}</div>}
-      <div className="lock-hint">La sesión se vuelve a bloquear a los 10 minutos.</div>
-    </form>
   )
 }
 
