@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
+import { useAuth } from '../context/AuthContext'
 import Modal from './Modal'
-import { UNIDADES_COMPRA } from '../lib/formato'
+import { pesos, UNIDADES_COMPRA } from '../lib/formato'
 
 // esSub = true -> editor de sub-receta (pide rendimiento)
 export default function RecetaEditor({ receta, esSub, onClose, onGuardado }) {
+  const { esDueno } = useAuth()
   const [nombre, setNombre] = useState(receta?.nombre || '')
   const [categoria, setCategoria] = useState(receta?.categoria || '')
   const [rindeCant, setRindeCant] = useState(receta?.rinde_cant || '')
@@ -16,6 +18,7 @@ export default function RecetaEditor({ receta, esSub, onClose, onGuardado }) {
   const [guardando, setGuardando] = useState(false)
   const [error, setError] = useState('')
   const [cargando, setCargando] = useState(true)
+  const [costosLinea, setCostosLinea] = useState({}) // idx -> { unitario, total } — solo se llena si esDueno
 
   useEffect(() => {
     async function cargar() {
@@ -43,6 +46,32 @@ export default function RecetaEditor({ receta, esSub, onClose, onGuardado }) {
     if (tipo === 'insumo') return insumos.find((i) => i.id === Number(ref))?.unidad_base || 'g'
     return subrecetas.find((s) => s.id === Number(ref))?.rinde_unidad || 'und'
   }
+
+  // el dueño ve, en vivo, cuánto cuesta cada ingrediente consumido (precio unitario x cantidad)
+  useEffect(() => {
+    if (!esDueno) return
+    let cancelado = false
+
+    async function calcular() {
+      const entradas = await Promise.all(
+        comps.map(async (c, idx) => {
+          if (!c.ref || !c.cantidad) return [idx, null]
+          const fn = c.tipo === 'insumo' ? 'costeo_costo_insumo' : 'costeo_costo_unitario_subreceta'
+          const param = c.tipo === 'insumo' ? { p_insumo: Number(c.ref) } : { p_sub: Number(c.ref) }
+          const { data, error } = await supabase.rpc(fn, param)
+          if (error || data == null) return [idx, null]
+          const unitario = Number(data)
+          return [idx, { unitario, total: unitario * Number(c.cantidad) }]
+        })
+      )
+      if (cancelado) return
+      setCostosLinea(Object.fromEntries(entradas))
+    }
+    calcular()
+    return () => { cancelado = true }
+  }, [comps, esDueno])
+
+  const costoTotalReceta = Object.values(costosLinea).reduce((s, v) => s + (v?.total || 0), 0)
 
   function agregar() { setComps([...comps, { tipo: 'insumo', ref: '', cantidad: '', unidad: 'g' }]) }
   function quitar(idx) { setComps(comps.filter((_, i) => i !== idx)) }
@@ -143,31 +172,47 @@ export default function RecetaEditor({ receta, esSub, onClose, onGuardado }) {
             <div className="comp-list">
               {comps.length === 0 && <div className="comp-empty">Todavía no hay ingredientes.</div>}
               {comps.map((c, idx) => (
-                <div className="comp-row" key={idx}>
-                  <select className="f-select" value={c.tipo + ':' + c.ref}
-                    onChange={(e) => {
-                      const [tipo, ref] = e.target.value.split(':')
-                      setComps(comps.map((cc, i) => i === idx ? { ...cc, tipo, ref, unidad: unidadDe(tipo, ref) } : cc))
-                    }}>
-                    <option value="insumo:">— elegir —</option>
-                    <optgroup label="Insumos">
-                      {insumos.map((i) => <option key={'i' + i.id} value={'insumo:' + i.id}>{i.nombre}</option>)}
-                    </optgroup>
-                    {subrecetas.length > 0 && (
-                      <optgroup label="Sub-recetas">
-                        {subrecetas.map((s) => <option key={'s' + s.id} value={'sub:' + s.id}>{s.nombre}</option>)}
+                <div key={idx}>
+                  <div className="comp-row">
+                    <select className="f-select" value={c.tipo + ':' + c.ref}
+                      onChange={(e) => {
+                        const [tipo, ref] = e.target.value.split(':')
+                        setComps(comps.map((cc, i) => i === idx ? { ...cc, tipo, ref, unidad: unidadDe(tipo, ref) } : cc))
+                      }}>
+                      <option value="insumo:">— elegir —</option>
+                      <optgroup label="Insumos">
+                        {insumos.map((i) => <option key={'i' + i.id} value={'insumo:' + i.id}>{i.nombre}</option>)}
                       </optgroup>
-                    )}
-                  </select>
-                  <input className="f-input" type="number" min="0" step="any" placeholder="Cant."
-                    value={c.cantidad} onChange={(e) => cambiar(idx, 'cantidad', e.target.value)} />
-                  <span className="comp-unit">{c.ref ? unidadDe(c.tipo, c.ref) : ''}</span>
-                  <button className="comp-del" onClick={() => quitar(idx)} aria-label="Quitar">✕</button>
+                      {subrecetas.length > 0 && (
+                        <optgroup label="Sub-recetas">
+                          {subrecetas.map((s) => <option key={'s' + s.id} value={'sub:' + s.id}>{s.nombre}</option>)}
+                        </optgroup>
+                      )}
+                    </select>
+                    <input className="f-input" type="number" min="0" step="any" placeholder="Cant."
+                      value={c.cantidad} onChange={(e) => cambiar(idx, 'cantidad', e.target.value)} />
+                    <span className="comp-unit">{c.ref ? unidadDe(c.tipo, c.ref) : ''}</span>
+                    <button className="comp-del" onClick={() => quitar(idx)} aria-label="Quitar">✕</button>
+                  </div>
+                  {esDueno && c.ref && c.cantidad && costosLinea[idx] && (
+                    <div className="comp-costo">
+                      {pesos(costosLinea[idx].unitario)} / {unidadDe(c.tipo, c.ref)} · total: <b>{pesos(costosLinea[idx].total)}</b>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
             <button className="comp-add" onClick={agregar}>+ Agregar ingrediente</button>
           </div>
+
+          {esDueno && comps.some((c) => c.ref && c.cantidad) && (
+            <div className="calc-box">
+              Costo total de esta receta: <b>{pesos(costoTotalReceta)}</b>
+              {!esSub && porcionesLote && (
+                <> · por porción (÷{porcionesLote}): <b>{pesos(costoTotalReceta / Number(porcionesLote))}</b></>
+              )}
+            </div>
+          )}
 
           {error && <div className="calc-box" style={{ color: '#8A2417', background: '#F7E4DF', borderColor: '#E6B8AC' }}>{error}</div>}
 

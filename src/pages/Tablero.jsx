@@ -11,6 +11,7 @@ export default function Tablero() {
   const [conteos, setConteos] = useState({})
   const [platos, setPlatos] = useState(null) // null = aún no cargado
   const [editando, setEditando] = useState(null)
+  const [busqueda, setBusqueda] = useState('')
 
   useEffect(() => {
     async function c() {
@@ -41,6 +42,15 @@ export default function Tablero() {
     return { n: platos.length, margenProm, bajos }
   }, [platos])
 
+  const platosFiltrados = useMemo(() => {
+    const q = busqueda.trim().toLowerCase()
+    const base = platos || []
+    if (!q) return base
+    return base.filter((p) =>
+      p.nombre.toLowerCase().includes(q) || (p.categoria || '').toLowerCase().includes(q)
+    )
+  }, [platos, busqueda])
+
   return (
     <Layout conteos={conteos}>
       <div className="main-head">
@@ -69,16 +79,33 @@ export default function Tablero() {
           </div>
         </div>
 
+        <div className="toolbar">
+          <div className="search">
+            <span className="lupa">⌕</span>
+            <input
+              type="text" placeholder="Buscar plato… (nombre o categoría)"
+              value={busqueda} onChange={(e) => setBusqueda(e.target.value)}
+            />
+          </div>
+        </div>
+
         <div className="platos-head">
-          <span className="platos-lbl">Platos · ordenados por margen</span>
+          <span className="platos-lbl">Platos · ordenados por margen{busqueda ? ` · ${platosFiltrados.length} resultado(s)` : ''}</span>
           <span className="margen-sano-lbl">Margen sano: ≥ {Math.round(MARGEN_SANO * 100)}%</span>
         </div>
 
-        <div className="platos-grid">
-          {(platos || []).slice().sort((a, b) => (a.margen ?? -1) - (b.margen ?? -1)).map((p) => (
-            <PlatoCard key={p.id ?? p.nombre} plato={p} onEditar={p.id ? () => setEditando(p) : null} />
-          ))}
-        </div>
+        {platos && platosFiltrados.length === 0 ? (
+          <div className="vacio">
+            <div className="vacio-emoji">🔍</div>
+            No hay platos que coincidan con "{busqueda}".
+          </div>
+        ) : (
+          <div className="platos-grid">
+            {platosFiltrados.slice().sort((a, b) => (a.margen ?? -1) - (b.margen ?? -1)).map((p) => (
+              <PlatoCard key={p.id ?? p.nombre} plato={p} onEditar={p.id ? () => setEditando(p) : null} />
+            ))}
+          </div>
+        )}
       </div>
 
       {editando && (
@@ -119,6 +146,9 @@ function PlatoCard({ plato, onEditar }) {
         <div><div className="plato-dato-lbl">Venta</div><div className="plato-dato-val">{plato.precio_venta != null ? pesos(plato.precio_venta) : '—'}</div></div>
         <div><div className="plato-dato-lbl">Sugerido</div><div className="plato-dato-val sugerido">{pesos(plato.sugerido_40)}</div></div>
       </div>
+      {plato.porciones_lote && (
+        <div className="plato-lote-hint">Costo del lote ÷ {Math.round(plato.porciones_lote)} porciones</div>
+      )}
       <div className="plato-bar"><div className="plato-bar-fill" style={{ width: barra + '%' }} /></div>
       {onEditar && <button className="plato-edit" onClick={onEditar}>Precio de venta</button>}
     </div>

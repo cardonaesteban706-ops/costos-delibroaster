@@ -22,3 +22,6 @@
 .comp-add { margin-top: 4px; background: transparent; color: var(--brick); font-weight: 500; font-size: 0.9rem; padding: 8px 0; }
 .comp-add:hover { text-decoration: underline; }
 .comp-empty { color: var(--ink-faint); font-size: 0.9rem; padding: 8px 0; }
+
+.comp-costo { font-size: 0.78rem; color: var(--ink-soft); padding: 0 0 8px 4px; margin-top: -4px; }
+.comp-costo b { color: var(--ink); }
