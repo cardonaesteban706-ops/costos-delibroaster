@@ -9,6 +9,7 @@ export default function RecetaEditor({ receta, esSub, onClose, onGuardado }) {
   const [categoria, setCategoria] = useState(receta?.categoria || '')
   const [rindeCant, setRindeCant] = useState(receta?.rinde_cant || '')
   const [rindeUnidad, setRindeUnidad] = useState(receta?.rinde_unidad || 'und')
+  const [porcionesLote, setPorcionesLote] = useState(receta?.porciones_lote || '')
   const [comps, setComps] = useState([])
   const [insumos, setInsumos] = useState([])
   const [subrecetas, setSubrecetas] = useState([])
@@ -66,6 +67,7 @@ export default function RecetaEditor({ receta, esSub, onClose, onGuardado }) {
       nombre: nombre.trim(), es_subreceta: esSub, categoria: categoria.trim() || null,
       rinde_cant: esSub ? Number(rindeCant) : null,
       rinde_unidad: esSub ? rindeUnidad : null,
+      porciones_lote: !esSub && porcionesLote ? Number(porcionesLote) : null,
     }
 
     let recetaId = receta?.id
@@ -120,6 +122,19 @@ export default function RecetaEditor({ receta, esSub, onClose, onGuardado }) {
                 </select>
               </div>
               <div className="f-hint">Ej: si de un lote salen 155 pollos apanados, escribe 155 y elige unidades.</div>
+            </div>
+          )}
+
+          {!esSub && (
+            <div className="f-group">
+              <label className="f-label">¿Este plato se prepara en un lote grande? (opcional)</label>
+              <input className="f-input" type="number" min="0" step="any" placeholder="Ej: 13 porciones — déjalo vacío si ya es por porción individual"
+                value={porcionesLote} onChange={(e) => setPorcionesLote(e.target.value)} />
+              <div className="f-hint">
+                Si los ingredientes que agregaste abajo son de un caldero/lote completo (no de una sola porción),
+                escribe cuántas porciones rinde ese lote. El costo se dividirá automáticamente entre ese número.
+                Ej: Arroz paisa → 13.
+              </div>
             </div>
           )}
 

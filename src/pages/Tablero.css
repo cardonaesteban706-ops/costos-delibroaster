@@ -91,3 +91,5 @@
 @media (max-width: 900px) {
   .resumen-grid, .platos-grid { grid-template-columns: 1fr; }
 }
+
+.plato-lote-hint { font-size: 0.72rem; color: var(--ink-faint); margin-top: 10px; font-style: italic; }
