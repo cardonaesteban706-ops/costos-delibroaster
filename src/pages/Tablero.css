@@ -93,3 +93,8 @@
 }
 
 .plato-lote-hint { font-size: 0.72rem; color: var(--ink-faint); margin-top: 10px; font-style: italic; }
+
+.plato-acciones { display: flex; gap: 8px; margin-top: 4px; }
+.plato-acciones .plato-edit { flex: 1; }
+.plato-edit.ghost { background: transparent; border: 1px solid var(--hairline); color: var(--ink-soft); }
+.plato-edit.ghost:hover { background: var(--cream-soft); color: var(--ink); }

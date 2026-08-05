@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import Layout from '../components/Layout'
 import Modal from '../components/Modal'
+import RecetaEditor from '../components/RecetaEditor'
 import { pesos } from '../lib/formato'
 import './Tablero.css'
 
@@ -11,7 +12,18 @@ export default function Tablero() {
   const [conteos, setConteos] = useState({})
   const [platos, setPlatos] = useState(null) // null = aún no cargado
   const [editando, setEditando] = useState(null)
+  const [editandoReceta, setEditandoReceta] = useState(null) // receta completa a editar
   const [busqueda, setBusqueda] = useState('')
+
+  // trae la receta completa (con es_subreceta, categoria, etc.) y abre el editor
+  async function abrirReceta(platoId) {
+    const { data } = await supabase
+      .from('costeo_recetas')
+      .select('id, nombre, categoria, es_subreceta, rinde_cant, rinde_unidad, porciones_lote')
+      .eq('id', platoId)
+      .single()
+    if (data) setEditandoReceta(data)
+  }
 
   useEffect(() => {
     async function c() {
@@ -102,7 +114,9 @@ export default function Tablero() {
         ) : (
           <div className="platos-grid">
             {platosFiltrados.slice().sort((a, b) => (a.margen ?? -1) - (b.margen ?? -1)).map((p) => (
-              <PlatoCard key={p.id ?? p.nombre} plato={p} onEditar={p.id ? () => setEditando(p) : null} />
+              <PlatoCard key={p.id ?? p.nombre} plato={p}
+                onEditar={p.id ? () => setEditando(p) : null}
+                onVerReceta={p.id ? () => abrirReceta(p.id) : null} />
             ))}
           </div>
         )}
@@ -111,6 +125,15 @@ export default function Tablero() {
       {editando && (
         <PrecioVenta plato={editando} onClose={() => setEditando(null)}
           onGuardado={() => { setEditando(null); cargarPlatos() }} />
+      )}
+
+      {editandoReceta && (
+        <RecetaEditor
+          receta={editandoReceta}
+          esSub={editandoReceta.es_subreceta}
+          onClose={() => setEditandoReceta(null)}
+          onGuardado={() => { setEditandoReceta(null); cargarPlatos() }}
+        />
       )}
     </Layout>
   )
@@ -123,7 +146,7 @@ function categoriaMargen(m) {
   return 'verde'
 }
 
-function PlatoCard({ plato, onEditar }) {
+function PlatoCard({ plato, onEditar, onVerReceta }) {
   const cat = categoriaMargen(plato.margen)
   const pct = plato.margen != null ? Math.round(plato.margen * 100) : null
   const etiqueta = plato.margen == null ? 'sin precio' : cat === 'rojo' ? 'pierde plata' : cat === 'ambar' ? 'ajustado' : 'sano'
@@ -150,7 +173,10 @@ function PlatoCard({ plato, onEditar }) {
         <div className="plato-lote-hint">Costo del lote ÷ {Math.round(plato.porciones_lote)} porciones</div>
       )}
       <div className="plato-bar"><div className="plato-bar-fill" style={{ width: barra + '%' }} /></div>
-      {onEditar && <button className="plato-edit" onClick={onEditar}>Precio de venta</button>}
+      <div className="plato-acciones">
+        {onVerReceta && <button className="plato-edit ghost" onClick={onVerReceta}>Ver receta</button>}
+        {onEditar && <button className="plato-edit" onClick={onEditar}>Precio de venta</button>}
+      </div>
     </div>
   )
 }
