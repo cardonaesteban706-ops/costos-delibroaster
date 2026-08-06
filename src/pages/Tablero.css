@@ -108,3 +108,49 @@
 .plato-acciones .plato-edit { flex: 1; }
 .plato-edit.ghost { background: transparent; border: 1px solid var(--hairline); color: var(--ink-soft); }
 .plato-edit.ghost:hover { background: var(--cream-soft); color: var(--ink); }
+
+/* ============ PANEL DE PROMOCIONES ============ */
+.promo-panel {
+  background: var(--card); border: 1.5px solid var(--amber);
+  border-radius: var(--radius-lg); padding: 20px 22px; margin-top: 18px;
+}
+.promo-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; flex-wrap: wrap; }
+.promo-title { font-family: var(--font-display); font-weight: 600; font-size: 1.2rem; color: var(--ink); }
+.promo-sub { color: var(--ink-soft); font-size: 0.88rem; margin-top: 4px; max-width: 480px; }
+.promo-control { flex-shrink: 0; }
+.promo-input-wrap {
+  display: flex; align-items: center; gap: 6px;
+  background: var(--cream-soft); border: 1.5px solid var(--hairline); border-radius: 10px;
+  padding: 0 12px; height: 44px; width: 90px;
+}
+.promo-input-wrap input {
+  border: none; background: transparent; width: 100%; height: 100%;
+  font-family: var(--font-display); font-size: 1.1rem; color: var(--ink); text-align: right;
+}
+.promo-input-wrap input:focus { outline: none; }
+.promo-input-wrap span { color: var(--ink-soft); font-size: 0.95rem; }
+
+.promo-vacio { color: var(--ink-faint); font-size: 0.92rem; padding: 18px 4px 4px; }
+
+.promo-list { margin-top: 18px; display: flex; flex-direction: column; gap: 10px; }
+.promo-row {
+  display: grid; grid-template-columns: 1fr auto auto auto; gap: 16px; align-items: center;
+  background: var(--cream-soft); border: 1px solid var(--hairline-soft); border-radius: 12px;
+  padding: 12px 16px;
+}
+.promo-nombre { font-weight: 600; color: var(--ink); display: flex; flex-direction: column; gap: 2px; }
+.promo-margen-actual { font-weight: 400; font-size: 0.76rem; color: var(--ink-faint); }
+.promo-precios { display: flex; align-items: center; gap: 8px; white-space: nowrap; }
+.promo-actual { color: var(--ink-faint); text-decoration: line-through; font-size: 0.9rem; }
+.promo-flecha { color: var(--ink-faint); }
+.promo-nuevo { font-family: var(--font-display); font-weight: 600; font-size: 1.1rem; color: var(--brick); }
+.promo-rebaja { color: var(--green); font-weight: 600; font-size: 0.9rem; white-space: nowrap; }
+.promo-rebaja span { font-weight: 400; color: var(--ink-soft); font-size: 0.8rem; }
+
+@media (max-width: 720px) {
+  .promo-row { grid-template-columns: 1fr; gap: 8px; }
+  .promo-row .plato-edit { width: 100%; }
+  .promo-head { flex-direction: column; }
+  .promo-control { align-self: stretch; }
+  .promo-input-wrap { width: 100%; }
+}

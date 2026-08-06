@@ -7,6 +7,7 @@ import { pesos } from '../lib/formato'
 import './Tablero.css'
 
 const MARGEN_SANO = 0.30
+const MARGEN_PROMO_DEFAULT = 40 // %
 
 export default function Tablero() {
   const [conteos, setConteos] = useState({})
@@ -14,6 +15,8 @@ export default function Tablero() {
   const [editando, setEditando] = useState(null)
   const [editandoReceta, setEditandoReceta] = useState(null) // receta completa a editar
   const [busqueda, setBusqueda] = useState('')
+  const [mostrarPromos, setMostrarPromos] = useState(false)
+  const [margenObjetivo, setMargenObjetivo] = useState(MARGEN_PROMO_DEFAULT) // en %
 
   // trae la receta completa (con es_subreceta, categoria, etc.) y abre el editor
   async function abrirReceta(platoId) {
@@ -63,6 +66,21 @@ export default function Tablero() {
     )
   }, [platos, busqueda])
 
+  // candidatos a promoción: platos con precio de venta y margen actual por encima
+  // del margen objetivo -> tienen espacio para bajar el precio y seguir dejando ese margen.
+  const candidatosPromo = useMemo(() => {
+    const objetivo = Number(margenObjetivo) / 100
+    if (!platos || !objetivo || objetivo <= 0 || objetivo >= 1) return []
+    return platos
+      .filter((p) => p.precio_venta != null && p.margen != null && p.margen > objetivo)
+      .map((p) => {
+        const precioPromo = Math.ceil((p.costo / (1 - objetivo)) / 100) * 100
+        const rebaja = p.precio_venta - precioPromo
+        return { ...p, precioPromo, rebaja, rebajaPct: rebaja / p.precio_venta }
+      })
+      .sort((a, b) => b.rebajaPct - a.rebajaPct)
+  }, [platos, margenObjetivo])
+
   return (
     <Layout conteos={conteos}>
       <div className="main-head">
@@ -70,7 +88,22 @@ export default function Tablero() {
           <h1 className="main-title">Tablero de costos</h1>
           <p className="main-sub">Costo, margen y precio sugerido de cada plato.</p>
         </div>
+        <div className="head-actions">
+          <button className={'btn' + (mostrarPromos ? ' btn-primary' : ' btn-ghost')}
+            onClick={() => setMostrarPromos((v) => !v)}>
+            🏷️ Promociones
+          </button>
+        </div>
       </div>
+
+      {mostrarPromos && (
+        <PromoPanel
+          margenObjetivo={margenObjetivo}
+          setMargenObjetivo={setMargenObjetivo}
+          candidatos={candidatosPromo}
+          onEditar={(p) => setEditando(p)}
+        />
+      )}
 
       <div style={{ marginTop: 22 }}>
         <div className="resumen-grid">
@@ -177,6 +210,51 @@ function PlatoCard({ plato, onEditar, onVerReceta }) {
         {onVerReceta && <button className="plato-edit ghost" onClick={onVerReceta}>Ver receta</button>}
         {onEditar && <button className="plato-edit" onClick={onEditar}>Precio de venta</button>}
       </div>
+    </div>
+  )
+}
+
+function PromoPanel({ margenObjetivo, setMargenObjetivo, candidatos, onEditar }) {
+  return (
+    <div className="promo-panel">
+      <div className="promo-head">
+        <div>
+          <div className="promo-title">Candidatos a promoción</div>
+          <div className="promo-sub">Platos con margen actual por encima del objetivo — hay espacio para bajar el precio y seguir dejando ese margen.</div>
+        </div>
+        <div className="promo-control">
+          <label className="f-label" style={{ marginBottom: 4 }}>Margen objetivo</label>
+          <div className="promo-input-wrap">
+            <input type="number" min="1" max="90" value={margenObjetivo}
+              onChange={(e) => setMargenObjetivo(e.target.value)} />
+            <span>%</span>
+          </div>
+        </div>
+      </div>
+
+      {candidatos.length === 0 ? (
+        <div className="promo-vacio">Ningún plato tiene hoy margen por encima del {margenObjetivo}% con ese precio de venta.</div>
+      ) : (
+        <div className="promo-list">
+          {candidatos.map((p) => (
+            <div className="promo-row" key={p.id}>
+              <div className="promo-nombre">
+                {p.nombre}
+                <span className="promo-margen-actual">margen actual: {Math.round(p.margen * 100)}%</span>
+              </div>
+              <div className="promo-precios">
+                <span className="promo-actual">{pesos(p.precio_venta)}</span>
+                <span className="promo-flecha">→</span>
+                <span className="promo-nuevo">{pesos(p.precioPromo)}</span>
+              </div>
+              <div className="promo-rebaja">
+                -{Math.round(p.rebajaPct * 100)}% <span>({pesos(p.rebaja)})</span>
+              </div>
+              <button className="plato-edit ghost" onClick={() => onEditar({ ...p, precio_venta: p.precioPromo })}>Aplicar precio</button>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
