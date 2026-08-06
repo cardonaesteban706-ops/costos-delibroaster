@@ -25,3 +25,19 @@
 
 .comp-costo { font-size: 0.78rem; color: var(--ink-soft); padding: 0 0 8px 4px; margin-top: -4px; }
 .comp-costo b { color: var(--ink); }
+
+/* ============ MÓVIL ============ */
+@media (max-width: 640px) {
+  .rec-card { padding: 16px; }
+  .rec-top { flex-direction: column; align-items: stretch; gap: 10px; }
+  .rec-name { font-size: 1.1rem; line-height: 1.25; }
+  .rec-edit {
+    width: 100%; height: 44px; justify-content: center;
+    display: inline-flex; align-items: center;
+  }
+  /* filas del editor de ingredientes: apilar select + cantidad para que no se aprieten */
+  .comp-row { flex-wrap: wrap; gap: 6px; }
+  .comp-row .f-select { flex: 1 1 100%; }
+  .comp-row .f-input { flex: 1 1 auto; }
+  .comp-unit { min-width: auto; }
+}

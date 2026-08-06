@@ -58,3 +58,36 @@
 }
 .toast .ok { color: var(--amber); font-weight: 600; }
 @keyframes rise { from { opacity: 0; transform: translate(-50%, 10px); } to { opacity: 1; transform: translate(-50%, 0); } }
+
+/* ============ MÓVIL ============ */
+@media (max-width: 640px) {
+  /* La tarjeta de insumo pasa de fila a una cuadrícula que no se encima */
+  .ins-card {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    grid-template-areas:
+      "avatar info"
+      "price  price"
+      "edit   edit";
+    gap: 6px 14px;
+    padding: 16px;
+    align-items: center;
+  }
+  .ins-avatar { grid-area: avatar; }
+  .ins-info   { grid-area: info; }
+  .ins-name   { font-size: 1.05rem; line-height: 1.25; }
+  .ins-price  {
+    grid-area: price; text-align: left;
+    display: flex; align-items: baseline; gap: 8px;
+    margin-top: 4px; padding-top: 10px; border-top: 1px solid var(--hairline-soft);
+  }
+  .ins-price .val { font-size: 1.35rem; }
+  .ins-edit {
+    grid-area: edit; margin-left: 0; width: 100%;
+    height: 44px; justify-content: center;
+  }
+
+  .toolbar { flex-direction: column; align-items: stretch; }
+  .search input { height: 46px; }
+  .aviso { align-items: flex-start; font-size: 0.85rem; }
+}

@@ -36,28 +36,30 @@ export default function Layout({ conteos, children }) {
           </div>
         </div>
 
-        {esDueno && (
-          <>
-            <div className="side-section">Dirección</div>
-            <NavLink to="/tablero" className={({ isActive }) => 'nav-item' + (isActive ? ' activo' : '')}>
-              <span className="nav-left"><span className="nav-dot" />Tablero de costos</span>
-            </NavLink>
-          </>
-        )}
+        <nav className="side-nav">
+          {esDueno && (
+            <>
+              <div className="side-section">Dirección</div>
+              <NavLink to="/tablero" className={({ isActive }) => 'nav-item' + (isActive ? ' activo' : '')}>
+                <span className="nav-left"><span className="nav-dot" />Tablero de costos</span>
+              </NavLink>
+            </>
+          )}
 
-        <div className="side-section">Datos</div>
-        <NavLink to="/insumos" className={({ isActive }) => 'nav-item' + (isActive ? ' activo' : '')}>
-          <span className="nav-left"><span className="nav-dot" />Insumos</span>
-          <span className="nav-count">{conteos?.insumos ?? ''}</span>
-        </NavLink>
-        <NavLink to="/recetas" className={({ isActive }) => 'nav-item' + (isActive ? ' activo' : '')}>
-          <span className="nav-left"><span className="nav-dot" />Recetas</span>
-          <span className="nav-count">{conteos?.recetas ?? ''}</span>
-        </NavLink>
-        <NavLink to="/subrecetas" className={({ isActive }) => 'nav-item' + (isActive ? ' activo' : '')}>
-          <span className="nav-left"><span className="nav-dot" />Sub-recetas</span>
-          <span className="nav-count">{conteos?.subrecetas ?? ''}</span>
-        </NavLink>
+          <div className="side-section">Datos</div>
+          <NavLink to="/insumos" className={({ isActive }) => 'nav-item' + (isActive ? ' activo' : '')}>
+            <span className="nav-left"><span className="nav-dot" />Insumos</span>
+            <span className="nav-count">{conteos?.insumos ?? ''}</span>
+          </NavLink>
+          <NavLink to="/recetas" className={({ isActive }) => 'nav-item' + (isActive ? ' activo' : '')}>
+            <span className="nav-left"><span className="nav-dot" />Recetas</span>
+            <span className="nav-count">{conteos?.recetas ?? ''}</span>
+          </NavLink>
+          <NavLink to="/subrecetas" className={({ isActive }) => 'nav-item' + (isActive ? ' activo' : '')}>
+            <span className="nav-left"><span className="nav-dot" />Sub-recetas</span>
+            <span className="nav-count">{conteos?.subrecetas ?? ''}</span>
+          </NavLink>
+        </nav>
 
         <div className="side-foot">
           <div className="side-user">

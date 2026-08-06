@@ -89,7 +89,17 @@
 .plato-edit:hover { border-color: var(--brick); color: var(--brick); }
 
 @media (max-width: 900px) {
-  .resumen-grid, .platos-grid { grid-template-columns: 1fr; }
+  .resumen-grid { grid-template-columns: 1fr; }
+  .platos-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 640px) {
+  .toolbar { flex-direction: column; align-items: stretch; }
+  .platos-head { flex-direction: column; align-items: flex-start; gap: 4px; }
+  .plato-datos { gap: 6px; }
+  .plato-dato-val { font-size: 0.92rem; }
+  .plato-acciones { flex-direction: column; }
+  .plato-acciones .plato-edit { width: 100%; }
+  .plato-margen .pct { font-size: 1.3rem; }
 }
 
 .plato-lote-hint { font-size: 0.72rem; color: var(--ink-faint); margin-top: 10px; font-style: italic; }

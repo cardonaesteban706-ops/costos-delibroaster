@@ -58,10 +58,36 @@
 .btn-ghost { background: var(--card); border: 1.5px solid var(--hairline); color: var(--ink); }
 .btn-ghost:hover { border-color: var(--ink-faint); }
 
+.side-nav { display: flex; flex-direction: column; }
+
 @media (max-width: 720px) {
   .shell { grid-template-columns: 1fr; }
-  .side { position: static; height: auto; flex-direction: row; flex-wrap: wrap; gap: 8px; }
-  .side-foot { display: none; }
-  .main { padding: 24px 20px; }
-  .main-title { font-size: 1.7rem; }
+  .side {
+    position: sticky; top: 0; z-index: 40;
+    height: auto; flex-direction: column;
+    padding: 14px 16px; gap: 4px;
+    box-shadow: 0 2px 10px rgba(36,26,21,0.18);
+  }
+  /* marca + usuario en la misma fila superior */
+  .side-brand { margin-bottom: 12px; }
+  .side-section { display: none; }
+  /* navegación horizontal desplazable, cada ítem como pastilla */
+  .side-nav { display: flex; flex-direction: row; gap: 8px; overflow-x: auto; padding-bottom: 4px; -webkit-overflow-scrolling: touch; }
+  .nav-item { flex: 0 0 auto; margin-bottom: 0; padding: 9px 14px; white-space: nowrap; }
+  .nav-item .nav-count { display: none; }
+  /* el pie (usuario + salir) vuelve a mostrarse, en fila */
+  .side-foot { margin-top: 10px; display: block; }
+  .side-user { padding-top: 10px; }
+
+  .main { padding: 20px 16px; }
+  .main-title { font-size: 1.6rem; }
+  .main-sub { font-size: 0.92rem; }
+  .main-head { flex-direction: column; }
+  .head-actions { width: 100%; }
+  .head-actions .btn { flex: 1; justify-content: center; }
+}
+
+@media (max-width: 400px) {
+  .main-title { font-size: 1.4rem; }
+  .side-name { font-size: 1rem; }
 }
