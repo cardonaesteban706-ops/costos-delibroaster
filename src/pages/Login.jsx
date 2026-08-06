@@ -65,7 +65,7 @@ export default function Login() {
 
       <section className="login-form-wrap">
         <form className="login-form" onSubmit={onSubmit}>
-          <h2 className="form-title">Bienvenido de vuelta</h2>
+          <h2 className="form-title">De vuelta a la cocina</h2>
           <p className="form-sub">Ingresa con tu correo del restaurante.</p>
 
           <div className="field">
@@ -97,7 +97,7 @@ export default function Login() {
           {error && <div className="error-msg">{error}</div>}
 
           <button className="submit" type="submit" disabled={enviando}>
-            {enviando ? 'Entrando…' : 'Entrar a la cocina'}
+            {enviando ? 'Entrando…' : 'Entrar'}
           </button>
 
           <div className="form-divider">uso interno</div>
