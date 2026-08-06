@@ -154,3 +154,6 @@
   .promo-control { align-self: stretch; }
   .promo-input-wrap { width: 100%; }
 }
+
+.promo-search { margin-top: 16px; }
+.promo-search input { height: 46px; }

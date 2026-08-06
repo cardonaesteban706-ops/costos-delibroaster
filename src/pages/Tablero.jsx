@@ -17,6 +17,7 @@ export default function Tablero() {
   const [busqueda, setBusqueda] = useState('')
   const [mostrarPromos, setMostrarPromos] = useState(false)
   const [margenObjetivo, setMargenObjetivo] = useState(MARGEN_PROMO_DEFAULT) // en %
+  const [busquedaPromo, setBusquedaPromo] = useState('')
 
   // trae la receta completa (con es_subreceta, categoria, etc.) y abre el editor
   async function abrirReceta(platoId) {
@@ -71,15 +72,17 @@ export default function Tablero() {
   const candidatosPromo = useMemo(() => {
     const objetivo = Number(margenObjetivo) / 100
     if (!platos || !objetivo || objetivo <= 0 || objetivo >= 1) return []
+    const q = busquedaPromo.trim().toLowerCase()
     return platos
       .filter((p) => p.precio_venta != null && p.margen != null && p.margen > objetivo)
+      .filter((p) => !q || p.nombre.toLowerCase().includes(q) || (p.categoria || '').toLowerCase().includes(q))
       .map((p) => {
         const precioPromo = Math.ceil((p.costo / (1 - objetivo)) / 100) * 100
         const rebaja = p.precio_venta - precioPromo
         return { ...p, precioPromo, rebaja, rebajaPct: rebaja / p.precio_venta }
       })
       .sort((a, b) => b.rebajaPct - a.rebajaPct)
-  }, [platos, margenObjetivo])
+  }, [platos, margenObjetivo, busquedaPromo])
 
   return (
     <Layout conteos={conteos}>
@@ -101,6 +104,8 @@ export default function Tablero() {
           margenObjetivo={margenObjetivo}
           setMargenObjetivo={setMargenObjetivo}
           candidatos={candidatosPromo}
+          busqueda={busquedaPromo}
+          setBusqueda={setBusquedaPromo}
           onEditar={(p) => setEditando(p)}
         />
       )}
@@ -214,7 +219,7 @@ function PlatoCard({ plato, onEditar, onVerReceta }) {
   )
 }
 
-function PromoPanel({ margenObjetivo, setMargenObjetivo, candidatos, onEditar }) {
+function PromoPanel({ margenObjetivo, setMargenObjetivo, candidatos, busqueda, setBusqueda, onEditar }) {
   return (
     <div className="promo-panel">
       <div className="promo-head">
@@ -232,8 +237,20 @@ function PromoPanel({ margenObjetivo, setMargenObjetivo, candidatos, onEditar })
         </div>
       </div>
 
+      <div className="search promo-search">
+        <span className="lupa">⌕</span>
+        <input
+          type="text" placeholder="Buscar plato… (nombre o categoría)"
+          value={busqueda} onChange={(e) => setBusqueda(e.target.value)}
+        />
+      </div>
+
       {candidatos.length === 0 ? (
-        <div className="promo-vacio">Ningún plato tiene hoy margen por encima del {margenObjetivo}% con ese precio de venta.</div>
+        <div className="promo-vacio">
+          {busqueda
+            ? `No hay candidatos que coincidan con "${busqueda}".`
+            : `Ningún plato tiene hoy margen por encima del ${margenObjetivo}% con ese precio de venta.`}
+        </div>
       ) : (
         <div className="promo-list">
           {candidatos.map((p) => (
