@@ -91,3 +91,17 @@
   .search input { height: 46px; }
   .aviso { align-items: flex-start; font-size: 0.85rem; }
 }
+
+/* chip de "hace cuánto se actualizó el precio" */
+.chip-fecha {
+  font-size: 0.76rem; padding: 2px 9px; border-radius: 999px; font-weight: 500;
+}
+.chip-fecha.fresco { background: var(--green-soft); color: #2E5C2B; }
+.chip-fecha.tibio { background: var(--warn-soft); color: #8A5A11; }
+.chip-fecha.viejo { background: #F7E4DF; color: #8A2417; font-weight: 600; }
+.chip-fecha.sin-dato { background: var(--cream-soft); color: var(--ink-faint); }
+
+@media (max-width: 640px) {
+  .toolbar { gap: 10px; }
+  .toolbar .btn { width: 100%; justify-content: center; }
+}

@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import Layout from '../components/Layout'
 import Modal from '../components/Modal'
-import { pesos, presentacionLegible, iniciales, UNIDADES_COMPRA, NOMBRE_BASE, redondea } from '../lib/formato'
+import { pesos, presentacionLegible, iniciales, UNIDADES_COMPRA, NOMBRE_BASE, redondea, haceTiempo, frescuraPrecio } from '../lib/formato'
 import './Insumos.css'
 
 export default function Insumos() {
@@ -12,6 +12,7 @@ export default function Insumos() {
   const [conteos, setConteos] = useState({})
   const [cargando, setCargando] = useState(true)
   const [busqueda, setBusqueda] = useState('')
+  const [ordenAntiguos, setOrdenAntiguos] = useState(false)
   const [editando, setEditando] = useState(null)   // insumo a editar
   const [creando, setCreando] = useState(false)
   const [toast, setToast] = useState(null)
@@ -32,9 +33,12 @@ export default function Insumos() {
 
   const filtrados = useMemo(() => {
     const q = busqueda.trim().toLowerCase()
-    if (!q) return insumos
-    return insumos.filter((i) => i.nombre.toLowerCase().includes(q))
-  }, [insumos, busqueda])
+    let lista = q ? insumos.filter((i) => i.nombre.toLowerCase().includes(q)) : insumos
+    if (ordenAntiguos) {
+      lista = [...lista].sort((a, b) => new Date(a.actualizado_en || 0) - new Date(b.actualizado_en || 0))
+    }
+    return lista
+  }, [insumos, busqueda, ordenAntiguos])
 
   function mostrarToast(msg, platos) {
     setToast({ msg, platos })
@@ -68,6 +72,13 @@ export default function Insumos() {
             value={busqueda} onChange={(e) => setBusqueda(e.target.value)}
           />
         </div>
+        <button
+          className={'btn' + (ordenAntiguos ? ' btn-primary' : ' btn-ghost')}
+          onClick={() => setOrdenAntiguos((v) => !v)}
+          title="Ordenar por los que más tiempo llevan sin actualizar precio"
+        >
+          ⏱ Más antiguos primero
+        </button>
       </div>
 
       <div className="count-row">
@@ -90,6 +101,10 @@ export default function Insumos() {
               <div className="ins-meta">
                 <span>{presentacionLegible(Number(i.presentacion_cant), i.unidad_base)} · presentación</span>
                 {Number(i.merma_pct) > 0 && <span className="chip-merma">merma {Math.round(i.merma_pct * 100)}%</span>}
+                <span className={'chip-fecha ' + frescuraPrecio(i.actualizado_en)}>
+                  {frescuraPrecio(i.actualizado_en) === 'viejo' && '⚠ '}
+                  precio {haceTiempo(i.actualizado_en) || 'sin registro'}
+                </span>
               </div>
             </div>
             <div className="ins-price">

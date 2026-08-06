@@ -45,3 +45,29 @@ export function redondea(n) {
 export function iniciales(nombre) {
   return (nombre || '').trim().slice(0, 2)
 }
+
+// Fecha ISO -> "hace 3 días", "hace 2 meses", etc. (español, sin librerías externas)
+export function haceTiempo(fechaISO) {
+  if (!fechaISO) return null
+  const ms = Date.now() - new Date(fechaISO).getTime()
+  const min = Math.floor(ms / 60000)
+  if (min < 1) return 'recién'
+  if (min < 60) return `hace ${min} min`
+  const horas = Math.floor(min / 60)
+  if (horas < 24) return `hace ${horas} h`
+  const dias = Math.floor(horas / 24)
+  if (dias < 30) return `hace ${dias} ${dias === 1 ? 'día' : 'días'}`
+  const meses = Math.floor(dias / 30)
+  if (meses < 12) return `hace ${meses} ${meses === 1 ? 'mes' : 'meses'}`
+  const anios = Math.floor(meses / 12)
+  return `hace ${anios} ${anios === 1 ? 'año' : 'años'}`
+}
+
+// clasificación de qué tan viejo está un precio, para resaltar visualmente
+export function frescuraPrecio(fechaISO) {
+  if (!fechaISO) return 'sin-dato'
+  const dias = (Date.now() - new Date(fechaISO).getTime()) / 86400000
+  if (dias > 90) return 'viejo'      // más de 3 meses sin tocar
+  if (dias > 30) return 'tibio'      // entre 1 y 3 meses
+  return 'fresco'
+}
