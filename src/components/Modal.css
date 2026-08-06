@@ -8,13 +8,13 @@
 
 .modal-card {
   width: 100%; background: var(--card); border-radius: var(--radius-lg);
-  box-shadow: 0 24px 60px rgba(44, 26, 20, 0.25);
+  box-shadow: var(--shadow-pop);
   max-height: 90vh; overflow-y: auto;
 }
 .modal-head { display: flex; justify-content: space-between; align-items: flex-start; padding: 24px 26px 0; }
 .modal-title { font-size: 1.5rem; }
 .modal-sub { color: var(--ink-soft); margin-top: 5px; font-size: 0.9rem; }
-.modal-x { font-size: 1rem; color: var(--ink-faint); width: 34px; height: 34px; border-radius: 9px; }
+.modal-x { color: var(--ink-faint); width: 34px; height: 34px; border-radius: var(--radius-sm); display: grid; place-items: center; }
 .modal-x:hover { background: var(--cream-soft); color: var(--ink); }
 .modal-body { padding: 20px 26px 26px; }
 
@@ -40,6 +40,13 @@
   font-size: 0.9rem; color: var(--ink-soft);
 }
 .calc-box b { color: var(--ink); font-family: var(--font-display); }
+
+/* caja de error de formulario (reemplaza el rojo inline repetido) */
+.f-error {
+  margin-top: 12px; padding: 12px 14px; border-radius: var(--radius);
+  background: #F7E4DF; border: 1px solid #E6B8AC; color: #8A2417;
+  font-size: 0.9rem;
+}
 
 /* ============ MÓVIL ============ */
 @media (max-width: 640px) {

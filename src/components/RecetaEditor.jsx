@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import Modal from './Modal'
+import Icono from './Icono'
 import { pesos, UNIDADES_COMPRA } from '../lib/formato'
 
 // esSub = true -> editor de sub-receta (pide rendimiento)
@@ -192,7 +193,7 @@ export default function RecetaEditor({ receta, esSub, onClose, onGuardado }) {
                     <input className="f-input" type="number" min="0" step="any" placeholder="Cant."
                       value={c.cantidad} onChange={(e) => cambiar(idx, 'cantidad', e.target.value)} />
                     <span className="comp-unit">{c.ref ? unidadDe(c.tipo, c.ref) : ''}</span>
-                    <button className="comp-del" onClick={() => quitar(idx)} aria-label="Quitar">✕</button>
+                    <button className="comp-del" onClick={() => quitar(idx)} aria-label="Quitar"><Icono nombre="cerrar" size={16} /></button>
                   </div>
                   {esDueno && c.ref && c.cantidad && costosLinea[idx] && (
                     <div className="comp-costo">
@@ -214,7 +215,7 @@ export default function RecetaEditor({ receta, esSub, onClose, onGuardado }) {
             </div>
           )}
 
-          {error && <div className="calc-box" style={{ color: '#8A2417', background: '#F7E4DF', borderColor: '#E6B8AC' }}>{error}</div>}
+          {error && <div className="f-error">{error}</div>}
 
           <div className="f-actions">
             <button className="btn btn-ghost" onClick={onClose}>Cancelar</button>

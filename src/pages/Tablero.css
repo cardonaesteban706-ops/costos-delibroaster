@@ -1,39 +1,3 @@
-/* ---------- estado bloqueado ---------- */
-.lock-banner {
-  display: flex; align-items: center; gap: 10px;
-  background: var(--amber-soft); border: 1px solid #E9C787;
-  color: #8A5A11; border-radius: 999px; padding: 7px 16px; font-size: 0.86rem; font-weight: 500;
-}
-.lock-banner.abierto { background: var(--green-soft); color: var(--green); border-color: #B9D9A8; }
-.lock-dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
-
-.blur-wrap { position: relative; }
-.blur-content { filter: blur(7px); opacity: 0.55; pointer-events: none; user-select: none; }
-
-.lock-overlay {
-  position: absolute; inset: 0; display: grid; place-items: center; z-index: 5;
-}
-.lock-card {
-  width: 100%; max-width: 400px; background: var(--card); border-radius: var(--radius-lg);
-  box-shadow: 0 24px 60px rgba(44,26,20,0.22); padding: 34px 32px; text-align: center;
-}
-.lock-icon {
-  width: 58px; height: 58px; border-radius: 16px; background: var(--brick-bright);
-  color: #fff; display: grid; place-items: center; margin: 0 auto 18px; font-size: 1.5rem;
-}
-.lock-title { font-size: 1.4rem; margin-bottom: 8px; }
-.lock-sub { color: var(--ink-soft); font-size: 0.92rem; line-height: 1.55; margin-bottom: 20px; }
-.lock-input {
-  width: 100%; height: 50px; text-align: center; letter-spacing: 0.12em;
-  background: var(--cream-soft); border: 1.5px solid var(--hairline); border-radius: var(--radius);
-  color: var(--ink); margin-bottom: 14px;
-}
-.lock-input:focus { outline: none; border-color: var(--brick); box-shadow: 0 0 0 3px rgba(162,51,31,0.1); }
-.lock-btn { width: 100%; height: 50px; background: var(--brick-bright); color: #fff; font-weight: 600; font-family: var(--font-display); font-size: 1.02rem; border-radius: var(--radius); }
-.lock-btn:hover { background: var(--brick); }
-.lock-err { color: #8A2417; font-size: 0.85rem; margin-top: 10px; }
-.lock-hint { color: var(--ink-faint); font-size: 0.78rem; margin-top: 14px; }
-
 /* ---------- resumen ---------- */
 .resumen-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin: 22px 0 28px; }
 .resumen-card { background: var(--card); border: 1px solid var(--hairline); border-radius: var(--radius-lg); padding: 22px 24px; }
@@ -85,7 +49,7 @@
 .plato-card.ambar .plato-bar-fill { background: var(--warn); }
 .plato-card.verde .plato-bar-fill { background: var(--green); }
 
-.plato-edit { margin-top: 14px; height: 36px; padding: 0 14px; border-radius: 9px; border: 1.5px solid var(--hairline); color: var(--ink-soft); font-size: 0.84rem; }
+.plato-edit { margin-top: 14px; height: 36px; padding: 0 14px; border-radius: var(--radius-sm); border: 1.5px solid var(--hairline); color: var(--ink-soft); font-size: 0.84rem; }
 .plato-edit:hover { border-color: var(--brick); color: var(--brick); }
 
 @media (max-width: 900px) {
@@ -120,7 +84,7 @@
 .promo-control { flex-shrink: 0; }
 .promo-input-wrap {
   display: flex; align-items: center; gap: 6px;
-  background: var(--cream-soft); border: 1.5px solid var(--hairline); border-radius: 10px;
+  background: var(--cream-soft); border: 1.5px solid var(--hairline); border-radius: var(--radius-sm);
   padding: 0 12px; height: 44px; width: 90px;
 }
 .promo-input-wrap input {

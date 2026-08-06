@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase'
 import Layout from '../components/Layout'
 import Modal from '../components/Modal'
 import RecetaEditor from '../components/RecetaEditor'
+import Icono from '../components/Icono'
 import { pesos } from '../lib/formato'
 import './Tablero.css'
 
@@ -94,7 +95,7 @@ export default function Tablero() {
         <div className="head-actions">
           <button className={'btn' + (mostrarPromos ? ' btn-primary' : ' btn-ghost')}
             onClick={() => setMostrarPromos((v) => !v)}>
-            🏷️ Promociones
+            <Icono nombre="etiqueta" size={16} /> Promociones
           </button>
         </div>
       </div>
@@ -131,7 +132,7 @@ export default function Tablero() {
 
         <div className="toolbar">
           <div className="search">
-            <span className="lupa">⌕</span>
+            <span className="lupa"><Icono nombre="buscar" size={18} /></span>
             <input
               type="text" placeholder="Buscar plato… (nombre o categoría)"
               value={busqueda} onChange={(e) => setBusqueda(e.target.value)}
@@ -146,8 +147,8 @@ export default function Tablero() {
 
         {platos && platosFiltrados.length === 0 ? (
           <div className="vacio">
-            <div className="vacio-emoji">🔍</div>
-            No hay platos que coincidan con "{busqueda}".
+            <div className="vacio-emoji"><Icono nombre="buscar" size={38} /></div>
+            Nada por aquí con “{busqueda}”. Prueba con otro nombre.
           </div>
         ) : (
           <div className="platos-grid">
@@ -238,7 +239,7 @@ function PromoPanel({ margenObjetivo, setMargenObjetivo, candidatos, busqueda, s
       </div>
 
       <div className="search promo-search">
-        <span className="lupa">⌕</span>
+        <span className="lupa"><Icono nombre="buscar" size={18} /></span>
         <input
           type="text" placeholder="Buscar plato… (nombre o categoría)"
           value={busqueda} onChange={(e) => setBusqueda(e.target.value)}
@@ -306,7 +307,7 @@ function PrecioVenta({ plato, onClose, onGuardado }) {
         Costo actual: <b>{pesos(plato.costo)}</b> · Sugerido (40% margen): <b>{pesos(plato.sugerido_40)}</b>
         {margenProy != null && <> · Con este precio, margen: <b>{Math.round(margenProy * 100)}%</b></>}
       </div>
-      {error && <div className="calc-box" style={{ color: '#8A2417', background: '#F7E4DF', borderColor: '#E6B8AC' }}>{error}</div>}
+      {error && <div className="f-error">{error}</div>}
       <div className="f-actions">
         <button className="btn btn-ghost" onClick={onClose}>Cancelar</button>
         <button className="btn btn-primary" onClick={guardar} disabled={guardando}>

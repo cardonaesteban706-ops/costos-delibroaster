@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import Icono from './Icono'
 import './Modal.css'
 
 export default function Modal({ titulo, subtitulo, onClose, children, ancho = 460 }) {
@@ -17,7 +18,7 @@ export default function Modal({ titulo, subtitulo, onClose, children, ancho = 46
             <h3 className="modal-title">{titulo}</h3>
             {subtitulo && <p className="modal-sub">{subtitulo}</p>}
           </div>
-          <button className="modal-x" onClick={onClose} aria-label="Cerrar">✕</button>
+          <button className="modal-x" onClick={onClose} aria-label="Cerrar"><Icono nombre="cerrar" size={17} /></button>
         </div>
         <div className="modal-body">{children}</div>
       </div>

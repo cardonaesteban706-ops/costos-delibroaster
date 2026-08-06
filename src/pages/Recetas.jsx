@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import Layout from '../components/Layout'
 import RecetaEditor from '../components/RecetaEditor'
+import Icono from '../components/Icono'
 import './Recetas.css'
 
 export default function Recetas() {
@@ -58,30 +59,42 @@ export function ListaRecetas({ esSub }) {
 
       <div className="toolbar" style={{ marginTop: 18 }}>
         <div className="search">
-          <span className="lupa">⌕</span>
+          <span className="lupa"><Icono nombre="buscar" size={18} /></span>
           <input type="text" placeholder={`Buscar ${titulo.toLowerCase()}…`} value={busqueda} onChange={(e) => setBusqueda(e.target.value)} />
         </div>
       </div>
 
       <div className="count-row"><span className="count-lbl">{filtradas.length} {titulo.toLowerCase()}</span></div>
 
-      {cargando ? <div className="vacio">Cargando…</div> : filtradas.length === 0 ? (
-        <div className="vacio"><div className="vacio-emoji">🍲</div>No hay {titulo.toLowerCase()} todavía.</div>
-      ) : filtradas.map((r) => (
-        <div className="rec-card" key={r.id}>
-          <div className="rec-top">
-            <div>
-              <div className="rec-name">{r.nombre}</div>
-              {r.categoria && <div className="rec-cat">{r.categoria}</div>}
-              {esSub && r.rinde_cant && <span className="rec-rinde">rinde {Math.round(r.rinde_cant)} {r.rinde_unidad}</span>}
+      {cargando ? <div className="vacio">Cargando…</div> : busqueda && filtradas.length === 0 ? (
+        <div className="vacio">
+          <div className="vacio-emoji"><Icono nombre="buscar" size={38} /></div>
+          Nada por aquí con “{busqueda}”. Prueba con otro nombre.
+        </div>
+      ) : filtradas.length === 0 ? (
+        <div className="vacio">
+          <div className="vacio-emoji"><Icono nombre="olla" size={40} /></div>
+          {esSub
+            ? 'Todavía no hay preparaciones base. Crea la primera con el botón de arriba.'
+            : 'Todavía no hay platos en la carta. Crea el primero con el botón de arriba.'}
+        </div>
+      ) : filtradas.map((r) => {
+        const nComp = r.costeo_componentes?.[0]?.count ?? 0
+        return (
+          <div className="rec-card" key={r.id}>
+            {r.categoria && <div className="rec-eyebrow">{r.categoria}</div>}
+            <div className="rec-line">
+              <span className="rec-name">{r.nombre}</span>
+              <span className="rec-leader" aria-hidden="true" />
+              <span className="rec-count">{nComp} {nComp === 1 ? 'ingrediente' : 'ingredientes'}</span>
             </div>
-            <div style={{ textAlign: 'right' }}>
+            <div className="rec-foot">
+              {esSub && r.rinde_cant && <span className="rec-rinde">rinde {Math.round(r.rinde_cant)} {r.rinde_unidad}</span>}
               <button className="rec-edit" onClick={() => setEditando(r)}>Editar</button>
-              <div className="rec-count" style={{ marginTop: 8 }}>{r.costeo_componentes?.[0]?.count ?? 0} ingredientes</div>
             </div>
           </div>
-        </div>
-      ))}
+        )
+      })}
 
       {(editando || creando) && (
         <RecetaEditor

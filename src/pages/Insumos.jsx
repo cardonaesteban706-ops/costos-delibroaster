@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import Layout from '../components/Layout'
 import Modal from '../components/Modal'
+import Icono from '../components/Icono'
 import { pesos, presentacionLegible, iniciales, UNIDADES_COMPRA, NOMBRE_BASE, redondea, haceTiempo, frescuraPrecio } from '../lib/formato'
 import './Insumos.css'
 
@@ -59,14 +60,14 @@ export default function Insumos() {
 
       {!esDueno && (
         <div className="aviso">
-          <span className="cand">🔒</span>
+          <span className="cand"><Icono nombre="candado" size={16} /></span>
           Esta vista no muestra costos de plato, márgenes ni precios de venta. Solo precios de compra.
         </div>
       )}
 
       <div className="toolbar">
         <div className="search">
-          <span className="lupa">⌕</span>
+          <span className="lupa"><Icono nombre="buscar" size={18} /></span>
           <input
             type="text" placeholder="Buscar insumo… (tomate, aceite, pollo)"
             value={busqueda} onChange={(e) => setBusqueda(e.target.value)}
@@ -77,7 +78,7 @@ export default function Insumos() {
           onClick={() => setOrdenAntiguos((v) => !v)}
           title="Ordenar por los que más tiempo llevan sin actualizar precio"
         >
-          ⏱ Más antiguos primero
+          <Icono nombre="reloj" size={16} /> Más antiguos primero
         </button>
       </div>
 
@@ -89,8 +90,8 @@ export default function Insumos() {
         <div className="vacio">Cargando insumos…</div>
       ) : filtrados.length === 0 ? (
         <div className="vacio">
-          <div className="vacio-emoji">🔍</div>
-          No hay insumos que coincidan con “{busqueda}”.
+          <div className="vacio-emoji"><Icono nombre="buscar" size={38} /></div>
+          Nada por aquí con “{busqueda}”. Prueba con otro nombre.
         </div>
       ) : (
         filtrados.map((i) => (
@@ -102,7 +103,7 @@ export default function Insumos() {
                 <span>{presentacionLegible(Number(i.presentacion_cant), i.unidad_base)} · presentación</span>
                 {Number(i.merma_pct) > 0 && <span className="chip-merma">merma {Math.round(i.merma_pct * 100)}%</span>}
                 <span className={'chip-fecha ' + frescuraPrecio(i.actualizado_en)}>
-                  {frescuraPrecio(i.actualizado_en) === 'viejo' && '⚠ '}
+                  {frescuraPrecio(i.actualizado_en) === 'viejo' && <Icono nombre="alerta" size={12} />}
                   precio {haceTiempo(i.actualizado_en) || 'sin registro'}
                 </span>
               </div>
@@ -123,7 +124,7 @@ export default function Insumos() {
           onGuardado={(nPlatos) => {
             setEditando(null)
             cargar()
-            mostrarToast('Precio actualizado', nPlatos)
+            mostrarToast('Precio al día', nPlatos)
           }}
         />
       )}
@@ -131,13 +132,13 @@ export default function Insumos() {
       {creando && (
         <CrearInsumo
           onClose={() => setCreando(false)}
-          onCreado={() => { setCreando(false); cargar(); mostrarToast('Insumo creado', null) }}
+          onCreado={() => { setCreando(false); cargar(); mostrarToast('Insumo anotado', null) }}
         />
       )}
 
       {toast && (
         <div className="toast">
-          <span className="ok">✓</span>
+          <span className="ok"><Icono nombre="check" size={16} /></span>
           {toast.msg}
           {toast.platos != null && toast.platos > 0 && <> · <b>{toast.platos}</b> {toast.platos === 1 ? 'plato recalculado' : 'platos recalculados'}</>}
         </div>
@@ -165,18 +166,20 @@ function EditarPrecio({ insumo, onClose, onGuardado }) {
     return insumo.unidad_base
   })
   const [guardando, setGuardando] = useState(false)
+  const [error, setError] = useState('')
 
   const factor = opciones.find((o) => o.u === unidad)?.factor || 1
   const cantBase = Number(cantCompra) * factor
   const costoUnit = cantBase > 0 ? precio / cantBase / (1 - Number(insumo.merma_pct)) : 0
 
   async function guardar() {
+    setError('')
     setGuardando(true)
-    const { error } = await supabase
+    const { error: e } = await supabase
       .from('costeo_insumos')
       .update({ presentacion_precio: Number(precio), presentacion_cant: cantBase })
       .eq('id', insumo.id)
-    if (error) { setGuardando(false); alert('No se pudo guardar: ' + error.message); return }
+    if (e) { setGuardando(false); setError('No se pudo guardar. Revisa la conexión e intenta otra vez.'); return }
     const { data: n } = await supabase.rpc('costeo_platos_afectados', { p_insumo: insumo.id })
     setGuardando(false)
     onGuardado(n ?? 0)
@@ -205,6 +208,8 @@ function EditarPrecio({ insumo, onClose, onGuardado }) {
         Costo por {NOMBRE_BASE[insumo.unidad_base]}: <b>{pesos(costoUnit)}</b>
         {Number(insumo.merma_pct) > 0 && <> · incluye merma del {Math.round(insumo.merma_pct * 100)}%</>}
       </div>
+
+      {error && <div className="f-error">{error}</div>}
 
       <div className="f-actions">
         <button className="btn btn-ghost" onClick={onClose}>Cancelar</button>
@@ -299,7 +304,7 @@ function CrearInsumo({ onClose, onCreado }) {
       {cantBase > 0 && precio && (
         <div className="calc-box">Costo por {NOMBRE_BASE[base]}: <b>{pesos(costoUnit)}</b></div>
       )}
-      {error && <div className="calc-box" style={{ color: '#8A2417', background: '#F7E4DF', borderColor: '#E6B8AC' }}>{error}</div>}
+      {error && <div className="f-error">{error}</div>}
 
       <div className="f-actions">
         <button className="btn btn-ghost" onClick={onClose}>Cancelar</button>

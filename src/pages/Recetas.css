@@ -1,15 +1,19 @@
+/* tarjeta estilo "carta impresa": el conteo de ingredientes se cuelga del
+   nombre por una línea de puntos, como el precio en un menú de restaurante */
 .rec-card {
   background: var(--card); border: 1px solid var(--hairline); border-radius: var(--radius);
   padding: 18px 22px; margin-bottom: 12px; transition: border-color 0.12s;
 }
 .rec-card:hover { border-color: var(--ink-faint); }
-.rec-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 14px; }
+.rec-eyebrow { font-size: 0.7rem; letter-spacing: 0.09em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 8px; }
+.rec-line { display: flex; align-items: baseline; gap: 10px; }
 .rec-name { font-family: var(--font-display); font-weight: 600; font-size: 1.25rem; color: var(--ink); }
-.rec-cat { font-size: 0.84rem; color: var(--ink-soft); margin-top: 2px; }
-.rec-count { font-size: 0.82rem; color: var(--ink-faint); }
-.rec-edit { height: 38px; padding: 0 16px; border-radius: 10px; background: transparent; border: 1.5px solid var(--hairline); color: var(--brick); font-weight: 500; }
+.rec-leader { flex: 1; min-width: 24px; border-bottom: 2px dotted var(--hairline); transform: translateY(-5px); }
+.rec-count { font-size: 0.84rem; color: var(--ink-faint); white-space: nowrap; }
+.rec-foot { display: flex; align-items: center; gap: 12px; margin-top: 14px; }
+.rec-edit { margin-left: auto; height: 38px; padding: 0 16px; border-radius: var(--radius-sm); background: transparent; border: 1.5px solid var(--hairline); color: var(--brick); font-weight: 500; }
 .rec-edit:hover { border-color: var(--brick); }
-.rec-rinde { display: inline-block; margin-top: 8px; background: var(--cream-soft); border: 1px solid var(--hairline-soft); border-radius: 999px; padding: 3px 12px; font-size: 0.8rem; color: var(--ink-soft); }
+.rec-rinde { background: var(--cream-soft); border: 1px solid var(--hairline-soft); border-radius: 999px; padding: 3px 12px; font-size: 0.8rem; color: var(--ink-soft); }
 
 /* editor de componentes */
 .comp-list { margin: 6px 0 4px; }
@@ -17,7 +21,7 @@
 .comp-row .f-select { flex: 2; height: 44px; margin: 0; }
 .comp-row .f-input { flex: 1; height: 44px; margin: 0; }
 .comp-unit { font-size: 0.85rem; color: var(--ink-soft); min-width: 34px; }
-.comp-del { width: 40px; height: 44px; border-radius: 10px; color: var(--ink-faint); flex-shrink: 0; }
+.comp-del { width: 40px; height: 44px; border-radius: var(--radius-sm); color: var(--ink-faint); flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; }
 .comp-del:hover { background: #F7E4DF; color: #8A2417; }
 .comp-add { margin-top: 4px; background: transparent; color: var(--brick); font-weight: 500; font-size: 0.9rem; padding: 8px 0; }
 .comp-add:hover { text-decoration: underline; }
@@ -29,10 +33,10 @@
 /* ============ MÓVIL ============ */
 @media (max-width: 640px) {
   .rec-card { padding: 16px; }
-  .rec-top { flex-direction: column; align-items: stretch; gap: 10px; }
   .rec-name { font-size: 1.1rem; line-height: 1.25; }
+  .rec-foot { flex-wrap: wrap; }
   .rec-edit {
-    width: 100%; height: 44px; justify-content: center;
+    flex: 1; height: 44px; justify-content: center;
     display: inline-flex; align-items: center;
   }
   /* filas del editor de ingredientes: apilar select + cantidad para que no se aprieten */

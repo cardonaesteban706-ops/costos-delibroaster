@@ -20,8 +20,13 @@
   --warn-soft:    #F8E9CE;
   --hairline:     rgba(44, 36, 32, 0.10);
   --hairline-soft:rgba(44, 36, 32, 0.06);
+  --radius-sm:    10px;
   --radius:       14px;
   --radius-lg:    20px;
+  /* sombras compartidas: card en reposo, elemento flotante, toast */
+  --shadow-card:  0 1px 2px rgba(44, 26, 20, 0.04);
+  --shadow-pop:   0 24px 60px rgba(44, 26, 20, 0.24);
+  --shadow-toast: 0 12px 30px rgba(44, 26, 20, 0.30);
   --font-display: 'Fraunces', Georgia, serif;
   --font-body:    'Inter', system-ui, sans-serif;
 }
