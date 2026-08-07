@@ -164,6 +164,7 @@ export default function Insumos() {
 /* ---------- editar precio de un insumo ---------- */
 function EditarPrecio({ insumo, onClose, onGuardado }) {
   const opciones = UNIDADES_COMPRA[insumo.unidad_base]
+  const [nombre, setNombre] = useState(insumo.nombre)
   const [precio, setPrecio] = useState(insumo.presentacion_precio)
   const [cantCompra, setCantCompra] = useState(() => {
     // expresa la presentación guardada en la unidad de compra más natural
@@ -188,19 +189,29 @@ function EditarPrecio({ insumo, onClose, onGuardado }) {
 
   async function guardar() {
     setError('')
+    if (!nombre.trim()) { setError('Ponle un nombre al insumo.'); return }
     setGuardando(true)
     const { error: e } = await supabase
       .from('costeo_insumos')
-      .update({ presentacion_precio: Number(precio), presentacion_cant: cantBase })
+      .update({ nombre: nombre.trim(), presentacion_precio: Number(precio), presentacion_cant: cantBase })
       .eq('id', insumo.id)
-    if (e) { setGuardando(false); setError('No se pudo guardar. Revisa la conexión e intenta otra vez.'); return }
+    if (e) {
+      setGuardando(false)
+      setError(e.message?.includes('duplicate') ? 'Ya existe un insumo con ese nombre.' : 'No se pudo guardar. Revisa la conexión e intenta otra vez.')
+      return
+    }
     const { data: n } = await supabase.rpc('costeo_platos_afectados', { p_insumo: insumo.id })
     setGuardando(false)
     onGuardado(n ?? 0)
   }
 
   return (
-    <Modal titulo={insumo.nombre} subtitulo="Actualiza la presentación y su precio de compra." onClose={onClose}>
+    <Modal titulo={nombre || insumo.nombre} subtitulo="Actualiza el nombre, la presentación y el precio de compra." onClose={onClose}>
+      <div className="f-group">
+        <label className="f-label">Nombre</label>
+        <input className="f-input" value={nombre} onChange={(e) => setNombre(e.target.value)} autoFocus />
+      </div>
+
       <div className="f-group">
         <label className="f-label">¿Cómo lo compras?</label>
         <div className="f-row">
@@ -227,8 +238,8 @@ function EditarPrecio({ insumo, onClose, onGuardado }) {
 
       <div className="f-actions">
         <button className="btn btn-ghost" onClick={onClose}>Cancelar</button>
-        <button className="btn btn-primary" onClick={guardar} disabled={guardando || !cantBase || precio === ''}>
-          {guardando ? 'Guardando…' : 'Guardar precio'}
+        <button className="btn btn-primary" onClick={guardar} disabled={guardando || !cantBase || precio === '' || !nombre.trim()}>
+          {guardando ? 'Guardando…' : 'Guardar cambios'}
         </button>
       </div>
     </Modal>
