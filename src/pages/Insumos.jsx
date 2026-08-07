@@ -166,6 +166,7 @@ function EditarPrecio({ insumo, onClose, onGuardado }) {
   const opciones = UNIDADES_COMPRA[insumo.unidad_base]
   const [nombre, setNombre] = useState(insumo.nombre)
   const [precio, setPrecio] = useState(insumo.presentacion_precio)
+  const [merma, setMerma] = useState(insumo.merma_pct ? redondea(Number(insumo.merma_pct) * 100) : '')
   const [cantCompra, setCantCompra] = useState(() => {
     // expresa la presentación guardada en la unidad de compra más natural
     const kg = opciones.find((o) => o.u === 'kg')
@@ -185,7 +186,8 @@ function EditarPrecio({ insumo, onClose, onGuardado }) {
 
   const factor = opciones.find((o) => o.u === unidad)?.factor || 1
   const cantBase = Number(cantCompra) * factor
-  const costoUnit = cantBase > 0 ? precio / cantBase / (1 - Number(insumo.merma_pct)) : 0
+  const mermaFrac = Math.min(Math.max(Number(merma) || 0, 0), 99) / 100
+  const costoUnit = cantBase > 0 ? precio / cantBase / (1 - mermaFrac) : 0
 
   async function guardar() {
     setError('')
@@ -193,7 +195,7 @@ function EditarPrecio({ insumo, onClose, onGuardado }) {
     setGuardando(true)
     const { error: e } = await supabase
       .from('costeo_insumos')
-      .update({ nombre: nombre.trim(), presentacion_precio: Number(precio), presentacion_cant: cantBase })
+      .update({ nombre: nombre.trim(), presentacion_precio: Number(precio), presentacion_cant: cantBase, merma_pct: mermaFrac })
       .eq('id', insumo.id)
     if (e) {
       setGuardando(false)
@@ -206,7 +208,7 @@ function EditarPrecio({ insumo, onClose, onGuardado }) {
   }
 
   return (
-    <Modal titulo={nombre || insumo.nombre} subtitulo="Actualiza el nombre, la presentación y el precio de compra." onClose={onClose}>
+    <Modal titulo={nombre || insumo.nombre} subtitulo="Actualiza el nombre, la presentación, el precio y la merma." onClose={onClose}>
       <div className="f-group">
         <label className="f-label">Nombre</label>
         <input className="f-input" value={nombre} onChange={(e) => setNombre(e.target.value)} autoFocus />
@@ -223,15 +225,22 @@ function EditarPrecio({ insumo, onClose, onGuardado }) {
         </div>
       </div>
 
-      <div className="f-group">
-        <label className="f-label">Precio de esa presentación</label>
-        <input className="f-input" type="number" min="0" step="any" value={precio}
-          onChange={(e) => setPrecio(e.target.value)} />
+      <div className="f-row">
+        <div className="f-group">
+          <label className="f-label">Precio de esa presentación</label>
+          <input className="f-input" type="number" min="0" step="any" value={precio}
+            onChange={(e) => setPrecio(e.target.value)} />
+        </div>
+        <div className="f-group">
+          <label className="f-label">Merma % (opcional)</label>
+          <input className="f-input" type="number" min="0" max="99" step="any" placeholder="0"
+            value={merma} onChange={(e) => setMerma(e.target.value)} />
+        </div>
       </div>
 
       <div className="calc-box">
         Costo por {NOMBRE_BASE[insumo.unidad_base]}: <b>{pesos(costoUnit)}</b>
-        {Number(insumo.merma_pct) > 0 && <> · incluye merma del {Math.round(insumo.merma_pct * 100)}%</>}
+        {mermaFrac > 0 && <> · incluye merma del {Math.round(mermaFrac * 100)}%</>}
       </div>
 
       {error && <div className="f-error">{error}</div>}
