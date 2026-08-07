@@ -61,25 +61,30 @@
 .side-nav { display: flex; flex-direction: column; }
 
 @media (max-width: 720px) {
-  .shell { grid-template-columns: 1fr; }
+  /* minmax(0,1fr) evita que el max-content del nav horizontal (nowrap) reviente
+     la columna: sin esto la página entera se ensancha y hay que hacer pan/zoom */
+  .shell { grid-template-columns: minmax(0, 1fr); }
   .side {
     position: sticky; top: 0; z-index: 40;
     height: auto; flex-direction: column;
-    padding: 14px 16px; gap: 4px;
+    padding: max(14px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) 14px max(16px, env(safe-area-inset-left));
+    gap: 4px;
     box-shadow: 0 2px 10px rgba(36,26,21,0.18);
   }
   /* marca + usuario en la misma fila superior */
   .side-brand { margin-bottom: 12px; }
   .side-section { display: none; }
-  /* navegación horizontal desplazable, cada ítem como pastilla */
-  .side-nav { display: flex; flex-direction: row; gap: 8px; overflow-x: auto; padding-bottom: 4px; -webkit-overflow-scrolling: touch; }
-  .nav-item { flex: 0 0 auto; margin-bottom: 0; padding: 9px 14px; white-space: nowrap; }
+  /* navegación como pastillas que envuelven en varias filas: todas las
+     secciones quedan visibles a la vez, sin scroll oculto */
+  .side-nav { display: flex; flex-direction: row; flex-wrap: wrap; gap: 8px; min-width: 0; }
+  .nav-item { flex: 0 0 auto; margin-bottom: 0; padding: 11px 16px; min-height: 44px; white-space: nowrap; }
   .nav-item .nav-count { display: none; }
   /* el pie (usuario + salir) vuelve a mostrarse, en fila */
   .side-foot { margin-top: 10px; display: block; }
   .side-user { padding-top: 10px; }
+  .side-logout { min-width: 44px; min-height: 44px; padding: 10px; }
 
-  .main { padding: 20px 16px; }
+  .main { min-width: 0; padding: 20px max(16px, env(safe-area-inset-right)) 20px max(16px, env(safe-area-inset-left)); }
   .main-title { font-size: 1.6rem; }
   .main-sub { font-size: 0.92rem; }
   .main-head { flex-direction: column; }

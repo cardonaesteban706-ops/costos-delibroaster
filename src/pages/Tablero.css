@@ -63,6 +63,7 @@
   .plato-dato-val { font-size: 0.92rem; }
   .plato-acciones { flex-direction: column; }
   .plato-acciones .plato-edit { width: 100%; }
+  .plato-edit { min-height: 44px; }
   .plato-margen .pct { font-size: 1.3rem; }
 }
 

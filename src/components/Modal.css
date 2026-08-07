@@ -57,7 +57,8 @@
   }
   .modal-head { padding: 20px 18px 0; }
   .modal-title { font-size: 1.25rem; }
-  .modal-body { padding: 16px 18px 22px; }
+  .modal-x { width: 44px; height: 44px; }
+  .modal-body { padding: 16px 18px calc(22px + env(safe-area-inset-bottom)); }
   /* filas de campos que se apilan para no apretujarse */
   .f-row { flex-direction: column; gap: 14px; }
   .f-input, .f-select { height: 50px; font-size: 1rem; }

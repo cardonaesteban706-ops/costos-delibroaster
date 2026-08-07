@@ -44,4 +44,6 @@
   .comp-row .f-select { flex: 1 1 100%; }
   .comp-row .f-input { flex: 1 1 auto; }
   .comp-unit { min-width: auto; }
+  .comp-del { width: 44px; }
+  .comp-add { min-height: 44px; }
 }

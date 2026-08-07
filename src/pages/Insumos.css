@@ -13,7 +13,7 @@
 .search input {
   width: 100%; height: 50px; padding: 0 16px 0 44px;
   background: var(--card); border: 1.5px solid var(--hairline); border-radius: var(--radius);
-  color: var(--ink); font-size: 0.98rem;
+  color: var(--ink); font-size: 16px; /* >=16px evita el auto-zoom de iOS al enfocar */
 }
 .search input:focus { outline: none; border-color: var(--brick); box-shadow: 0 0 0 3px rgba(162,51,31,0.1); }
 .search .lupa { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: var(--ink-faint); display: flex; }
@@ -50,7 +50,7 @@
 .vacio-emoji { margin-bottom: 12px; color: var(--ink-faint); display: flex; justify-content: center; }
 
 .toast {
-  position: fixed; bottom: 26px; left: 50%; transform: translateX(-50%);
+  position: fixed; bottom: calc(26px + env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%);
   background: var(--coffee); color: #F3E9DC; padding: 14px 22px; border-radius: var(--radius);
   font-size: 0.95rem; box-shadow: var(--shadow-toast); z-index: 60;
   display: flex; align-items: center; gap: 10px;
