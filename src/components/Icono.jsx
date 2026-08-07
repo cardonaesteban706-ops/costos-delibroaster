@@ -48,6 +48,14 @@ export default function Icono({ nombre, size = 18, className, stroke = 1.8 }) {
           <path d="M9.5 6c0-1.2.7-2 1.5-2M13 6c0-1.2.7-2 1.5-2" />
         </svg>
       )
+    case 'papelera':
+      return (
+        <svg {...p}>
+          <path d="M3.5 6h17M8.5 6V4.5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1V6" />
+          <path d="M7.5 6h9v10.5a2 2 0 0 1-2 2h-5a2 2 0 0 1-2-2V6" />
+          <path d="M10 10.5v5M14 10.5v5" />
+        </svg>
+      )
     default:
       return null
   }

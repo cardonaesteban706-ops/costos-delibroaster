@@ -16,6 +16,7 @@ export default function Insumos() {
   const [ordenAntiguos, setOrdenAntiguos] = useState(false)
   const [editando, setEditando] = useState(null)   // insumo a editar
   const [creando, setCreando] = useState(false)
+  const [eliminando, setEliminando] = useState(null)  // insumo a eliminar
   const [toast, setToast] = useState(null)
 
   async function cargar() {
@@ -112,7 +113,14 @@ export default function Insumos() {
               <div className="val">{pesos(i.presentacion_precio)}</div>
               <div className="lbl">por presentación</div>
             </div>
-            <button className="ins-edit" onClick={() => setEditando(i)}>Editar</button>
+            <div className="ins-actions">
+              <button className="ins-edit" onClick={() => setEditando(i)}>Editar</button>
+              {esDueno && (
+                <button className="ins-delete" onClick={() => setEliminando(i)} title="Eliminar insumo">
+                  <Icono nombre="papelera" size={16} />
+                </button>
+              )}
+            </div>
           </div>
         ))
       )}
@@ -133,6 +141,14 @@ export default function Insumos() {
         <CrearInsumo
           onClose={() => setCreando(false)}
           onCreado={() => { setCreando(false); cargar(); mostrarToast('Insumo anotado', null) }}
+        />
+      )}
+
+      {eliminando && (
+        <EliminarInsumo
+          insumo={eliminando}
+          onClose={() => setEliminando(null)}
+          onEliminado={() => { setEliminando(null); cargar(); mostrarToast('Insumo eliminado', null) }}
         />
       )}
 
@@ -311,6 +327,80 @@ function CrearInsumo({ onClose, onCreado }) {
         <button className="btn btn-primary" onClick={guardar} disabled={guardando}>
           {guardando ? 'Creando…' : 'Crear insumo'}
         </button>
+      </div>
+    </Modal>
+  )
+}
+
+/* ---------- eliminar un insumo ---------- */
+function EliminarInsumo({ insumo, onClose, onEliminado }) {
+  const [verificando, setVerificando] = useState(true)
+  const [componentes, setComponentes] = useState(null)
+  const [eliminando, setEliminando] = useState(false)
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    async function verificar() {
+      const { data, error: e } = await supabase.rpc('costeo_componentes_insumo', { p_insumo: insumo.id })
+      setVerificando(false)
+      if (e) {
+        setError('No se pudo verificar si está en uso.')
+        return
+      }
+      setComponentes(data?.[0] || { componentes: 0, platos: 0 })
+    }
+    verificar()
+  }, [insumo.id])
+
+  async function eliminarConfirmado() {
+    setError('')
+    setEliminando(true)
+    const { error: e } = await supabase.from('costeo_insumos').delete().eq('id', insumo.id)
+    setEliminando(false)
+    if (e) {
+      setError(e.message || 'No se pudo eliminar. Intenta de nuevo.')
+      return
+    }
+    onEliminado()
+  }
+
+  const enUso = componentes && componentes.componentes > 0
+
+  return (
+    <Modal titulo="¿Eliminar este insumo?" subtitulo={insumo.nombre} onClose={onClose} ancho={450}>
+      {verificando && <div className="f-hint">Verificando si está en uso…</div>}
+
+      {!verificando && enUso && (
+        <>
+          <div className="f-error" style={{ marginBottom: 16 }}>
+            <Icono nombre="alerta" size={18} style={{ marginRight: 8 }} />
+            No se puede eliminar: se usa en <b>{componentes.platos} plato{componentes.platos === 1 ? '' : 's'}</b> ({componentes.componentes} componente{componentes.componentes === 1 ? '' : 's'}).
+          </div>
+          <p className="f-hint">Primero saca este insumo de todas las recetas donde lo uses, luego podrás borrarlo.</p>
+        </>
+      )}
+
+      {!verificando && !enUso && (
+        <>
+          <p className="f-hint">Este insumo no está siendo usado en ninguna receta. Está bien eliminarlo.</p>
+          {error && <div className="f-error">{error}</div>}
+        </>
+      )}
+
+      <div className="f-actions">
+        <button className="btn btn-ghost" onClick={onClose} disabled={eliminando}>
+          Cancelar
+        </button>
+        {!enUso && (
+          <button
+            className="btn btn-danger"
+            onClick={eliminarConfirmado}
+            disabled={eliminando || verificando}
+            style={{ background: '#C0392B', color: '#fff' }}
+          >
+            {eliminando ? 'Eliminando…' : 'Eliminar insumo'}
+          </button>
+        )}
       </div>
     </Modal>
   )
