@@ -115,11 +115,9 @@ export default function Insumos() {
             </div>
             <div className="ins-actions">
               <button className="ins-edit" onClick={() => setEditando(i)}>Editar</button>
-              {esDueno && (
-                <button className="ins-delete" onClick={() => setEliminando(i)} title="Eliminar insumo">
-                  <Icono nombre="papelera" size={16} />
-                </button>
-              )}
+              <button className="ins-delete" onClick={() => setEliminando(i)} title="Eliminar insumo">
+                <Icono nombre="papelera" size={16} />
+              </button>
             </div>
           </div>
         ))
