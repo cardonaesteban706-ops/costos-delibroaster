@@ -333,7 +333,7 @@ function CrearInsumo({ onClose, onCreado }) {
 /* ---------- eliminar un insumo ---------- */
 function EliminarInsumo({ insumo, onClose, onEliminado }) {
   const [verificando, setVerificando] = useState(true)
-  const [componentes, setComponentes] = useState(null)
+  const [usos, setUsos] = useState([])   // recetas/sub-recetas donde se usa
   const [eliminando, setEliminando] = useState(false)
   const [error, setError] = useState('')
 
@@ -345,7 +345,7 @@ function EliminarInsumo({ insumo, onClose, onEliminado }) {
         setError('No se pudo verificar si está en uso.')
         return
       }
-      setComponentes(data?.[0] || { componentes: 0, platos: 0 })
+      setUsos(data || [])
     }
     verificar()
   }, [insumo.id])
@@ -362,7 +362,9 @@ function EliminarInsumo({ insumo, onClose, onEliminado }) {
     onEliminado()
   }
 
-  const enUso = componentes && componentes.componentes > 0
+  const enUso = usos.length > 0
+  const platos = usos.filter((u) => !u.es_subreceta)
+  const subs = usos.filter((u) => u.es_subreceta)
 
   return (
     <Modal titulo="¿Eliminar este insumo?" subtitulo={insumo.nombre} onClose={onClose} ancho={450}>
@@ -370,11 +372,41 @@ function EliminarInsumo({ insumo, onClose, onEliminado }) {
 
       {!verificando && enUso && (
         <>
-          <div className="f-error" style={{ marginBottom: 16 }}>
+          <div className="f-error" style={{ marginBottom: 14 }}>
             <Icono nombre="alerta" size={18} style={{ marginRight: 8 }} />
-            No se puede eliminar: se usa en <b>{componentes.platos} plato{componentes.platos === 1 ? '' : 's'}</b> ({componentes.componentes} componente{componentes.componentes === 1 ? '' : 's'}).
+            No se puede eliminar todavía: este insumo se usa en {usos.length} receta{usos.length === 1 ? '' : 's'}.
           </div>
-          <p className="f-hint">Primero saca este insumo de todas las recetas donde lo uses, luego podrás borrarlo.</p>
+
+          <div className="usos-lista">
+            {platos.length > 0 && (
+              <>
+                <div className="usos-titulo">En estos platos:</div>
+                {platos.map((u) => (
+                  <div className="usos-item" key={'p' + u.receta_id}>
+                    <Icono nombre="olla" size={15} />
+                    <span>{u.receta_nombre}</span>
+                  </div>
+                ))}
+              </>
+            )}
+            {subs.length > 0 && (
+              <>
+                <div className="usos-titulo">En estas sub-recetas:</div>
+                {subs.map((u) => (
+                  <div className="usos-item" key={'s' + u.receta_id}>
+                    <Icono nombre="etiqueta" size={15} />
+                    <span>{u.receta_nombre}</span>
+                  </div>
+                ))}
+              </>
+            )}
+          </div>
+
+          <p className="f-hint" style={{ marginTop: 12 }}>
+            Ve a {platos.length > 0 && subs.length > 0 ? 'Recetas y Sub-recetas' : subs.length > 0 ? 'Sub-recetas' : 'Recetas'},
+            edita {usos.length === 1 ? 'esa' : 'esas'} preparaci{usos.length === 1 ? 'ón' : 'ones'} y cambia este insumo por el nuevo.
+            Cuando ya no lo use nadie, podrás borrarlo aquí.
+          </p>
         </>
       )}
 
@@ -389,11 +421,11 @@ function EliminarInsumo({ insumo, onClose, onEliminado }) {
         <button className="btn btn-ghost" onClick={onClose} disabled={eliminando}>
           Cancelar
         </button>
-        {!enUso && (
+        {!enUso && !verificando && (
           <button
             className="btn btn-danger"
             onClick={eliminarConfirmado}
-            disabled={eliminando || verificando}
+            disabled={eliminando}
             style={{ background: '#C0392B', color: '#fff' }}
           >
             {eliminando ? 'Eliminando…' : 'Eliminar insumo'}

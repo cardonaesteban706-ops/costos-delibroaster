@@ -118,3 +118,24 @@
   .toolbar { gap: 10px; }
   .toolbar .btn { width: 100%; justify-content: center; }
 }
+
+/* lista de recetas donde se usa un insumo (modal de eliminar) */
+.usos-lista {
+  background: var(--cream-soft);
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+}
+.usos-titulo {
+  font-size: 0.78rem; font-weight: 600; color: var(--ink-soft);
+  text-transform: uppercase; letter-spacing: 0.03em;
+  margin: 6px 0 6px;
+}
+.usos-titulo:first-child { margin-top: 0; }
+.usos-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 0; color: var(--ink);
+  font-size: 0.92rem;
+}
+.usos-item + .usos-titulo { margin-top: 12px; }
+.usos-item svg { color: var(--brick); }
