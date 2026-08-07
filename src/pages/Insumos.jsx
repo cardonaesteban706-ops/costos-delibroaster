@@ -168,7 +168,12 @@ function EditarPrecio({ insumo, onClose, onGuardado }) {
   const [precio, setPrecio] = useState(insumo.presentacion_precio)
   const [merma, setMerma] = useState(insumo.merma_pct ? redondea(Number(insumo.merma_pct) * 100) : '')
   const [cantCompra, setCantCompra] = useState(() => {
-    // expresa la presentación guardada en la unidad de compra más natural
+    // si ya sabemos en qué unidad se compró, la respetamos tal cual
+    if (insumo.unidad_compra) {
+      const o = opciones.find((op) => op.u === insumo.unidad_compra)
+      if (o) return redondea(insumo.presentacion_cant / o.factor)
+    }
+    // fallback para insumos viejos sin unidad_compra guardada: adivina con este umbral
     const kg = opciones.find((o) => o.u === 'kg')
     const l = opciones.find((o) => o.u === 'l')
     if (kg && insumo.presentacion_cant >= 1000) return redondea(insumo.presentacion_cant / 1000)
@@ -176,6 +181,9 @@ function EditarPrecio({ insumo, onClose, onGuardado }) {
     return redondea(insumo.presentacion_cant)
   })
   const [unidad, setUnidad] = useState(() => {
+    if (insumo.unidad_compra && opciones.some((o) => o.u === insumo.unidad_compra)) {
+      return insumo.unidad_compra
+    }
     if (insumo.presentacion_cant >= 1000 && (insumo.unidad_base === 'g' || insumo.unidad_base === 'ml')) {
       return insumo.unidad_base === 'g' ? 'kg' : 'l'
     }
@@ -195,7 +203,10 @@ function EditarPrecio({ insumo, onClose, onGuardado }) {
     setGuardando(true)
     const { error: e } = await supabase
       .from('costeo_insumos')
-      .update({ nombre: nombre.trim(), presentacion_precio: Number(precio), presentacion_cant: cantBase, merma_pct: mermaFrac })
+      .update({
+        nombre: nombre.trim(), presentacion_precio: Number(precio), presentacion_cant: cantBase,
+        merma_pct: mermaFrac, unidad_compra: unidad,
+      })
       .eq('id', insumo.id)
     if (e) {
       setGuardando(false)
@@ -285,7 +296,7 @@ function CrearInsumo({ onClose, onCreado }) {
     const { error } = await supabase.from('costeo_insumos').insert({
       nombre: nombre.trim(), unidad_base: base,
       presentacion_cant: cantBase, presentacion_precio: Number(precio),
-      merma_pct: mermaFrac, origen_dato: 'usuario',
+      merma_pct: mermaFrac, origen_dato: 'usuario', unidad_compra: unidad,
     })
     setGuardando(false)
     if (error) return setError(error.message.includes('duplicate') ? 'Ya existe un insumo con ese nombre.' : error.message)
