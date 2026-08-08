@@ -58,11 +58,16 @@ export default function Tablero() {
     // null = todavía no sabemos; distinto de "cero platos"
     if (!platos) return { n: null, margenProm: null, bajos: null }
     if (platos.length === 0) return { n: 0, margenProm: 0, bajos: 0 }
-    const conVenta = platos.filter((p) => p.precio_venta != null)
-    const margenProm = conVenta.length
-      ? conVenta.reduce((s, p) => s + Number(p.margen || 0), 0) / conVenta.length
-      : 0
-    const bajos = conVenta.filter((p) => Number(p.margen) < MARGEN_SANO).length
+    // filtrar por margen != null y no por precio_venta != null: un precio de 0
+    // pasaba el filtro pero llega con margen null, y Number(null || 0) lo contaba
+    // como un plato al 0% que hundía el promedio y sumaba a "bajo el margen sano".
+    const conMargen = platos.filter((p) => p.margen != null)
+    // margen ponderado del negocio: (Σventa − Σcosto) / Σventa. El promedio simple
+    // le daba el mismo peso a un plato de $8.000 que a uno de $46.000.
+    const sumaVenta = conMargen.reduce((s, p) => s + Number(p.precio_venta), 0)
+    const sumaCosto = conMargen.reduce((s, p) => s + Number(p.costo), 0)
+    const margenProm = sumaVenta > 0 ? (sumaVenta - sumaCosto) / sumaVenta : null
+    const bajos = conMargen.filter((p) => Number(p.margen) < MARGEN_SANO).length
     return { n: platos.length, margenProm, bajos }
   }, [platos])
 
@@ -139,7 +144,7 @@ export default function Tablero() {
           <div className="resumen-card oscura">
             <div className="resumen-lbl">Margen promedio</div>
             <div className="resumen-num">{resumen.margenProm != null ? Math.round(resumen.margenProm * 100) + '%' : '—'}</div>
-            <div className="resumen-sub">sobre los platos con precio de venta</div>
+            <div className="resumen-sub">ponderado por precio de venta</div>
           </div>
           <div className={'resumen-card' + (resumen.bajos > 0 ? ' alerta' : '')}>
             <div className="resumen-lbl">Bajo el margen sano</div>
