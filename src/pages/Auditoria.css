@@ -85,12 +85,6 @@
   margin-bottom: 20px;
 }
 
-.blur-content {
-  filter: blur(7px);
-  pointer-events: none;
-  user-select: none;
-}
-
 /* móvil */
 @media (max-width: 767px) {
   .cambios-head,

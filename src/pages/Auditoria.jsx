@@ -1,49 +1,13 @@
 import { useEffect, useMemo, useState } from 'react'
 import { BarChart, Bar, LineChart, Line, CartesianGrid, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 import { supabase } from '../lib/supabase'
-import { useAuth } from '../context/AuthContext'
 import Layout from '../components/Layout'
-import Modal from '../components/Modal'
-import Icono from '../components/Icono'
 import { pesos } from '../lib/formato'
 import './Auditoria.css'
 
-const DIEZ_MIN = 10 * 60 * 1000
-
 export default function Auditoria() {
-  const { perfil } = useAuth()
-  const [desbloqueado, setDesbloqueado] = useState(false)
-  const [desbloqueadoHasta, setDesbloqueadoHasta] = useState(null)
-  const [mostrarClave, setMostrarClave] = useState(false)
   const [conteos, setConteos] = useState({})
 
-  // intenta recuperar el desbloqueado del sessionStorage
-  useEffect(() => {
-    const guardado = sessionStorage.getItem('costeo_zona_sensible_hasta')
-    if (guardado) {
-      const hasta = Number(guardado)
-      if (Date.now() < hasta) {
-        setDesbloqueadoHasta(hasta)
-        setDesbloqueado(true)
-      } else {
-        sessionStorage.removeItem('costeo_zona_sensible_hasta')
-      }
-    }
-  }, [])
-
-  // refresca el estado de desbloqueado cada segundo
-  useEffect(() => {
-    if (!desbloqueadoHasta) return
-    const timer = setInterval(() => {
-      if (Date.now() >= desbloqueadoHasta) {
-        setDesbloqueado(false)
-        setDesbloqueadoHasta(null)
-      }
-    }, 1000)
-    return () => clearInterval(timer)
-  }, [desbloqueadoHasta])
-
-  // carga conteos
   useEffect(() => {
     async function c() {
       const [{ count: i }, { count: r }, { count: s }] = await Promise.all([
@@ -56,10 +20,6 @@ export default function Auditoria() {
     c()
   }, [])
 
-  function desbloquearClave() {
-    setMostrarClave(true)
-  }
-
   return (
     <Layout conteos={conteos}>
       <div className="main-head">
@@ -69,74 +29,11 @@ export default function Auditoria() {
         </div>
       </div>
 
-      {!desbloqueado ? (
-        <div className="blur-content" onClick={desbloquearClave} style={{ cursor: 'pointer', textAlign: 'center', paddingTop: 60 }}>
-          <Icono nombre="candado" size={48} style={{ marginBottom: 20, opacity: 0.5 }} />
-          <p style={{ color: 'var(--ink-soft)', marginBottom: 20 }}>Ingresa la clave de dirección para ver esta información.</p>
-          <button className="btn btn-primary">Desbloquear</button>
-        </div>
-      ) : (
-        <>
-          <div style={{ marginTop: 22 }}>
-            <SeccionCambiosPrecio />
-            <SeccionImpactoPlatos />
-          </div>
-        </>
-      )}
-
-      {mostrarClave && (
-        <ClaveForm
-          onClose={() => setMostrarClave(false)}
-          onDesbloqueado={() => {
-            const hasta = Date.now() + DIEZ_MIN
-            setDesbloqueadoHasta(hasta)
-            setDesbloqueado(true)
-            sessionStorage.setItem('costeo_zona_sensible_hasta', hasta.toString())
-            setMostrarClave(false)
-          }}
-        />
-      )}
+      <div style={{ marginTop: 22 }}>
+        <SeccionCambiosPrecio />
+        <SeccionImpactoPlatos />
+      </div>
     </Layout>
-  )
-}
-
-function ClaveForm({ onClose, onDesbloqueado }) {
-  const [clave, setClave] = useState('')
-  const [verificando, setVerificando] = useState(false)
-  const [error, setError] = useState('')
-
-  async function verificar() {
-    setError('')
-    if (!clave.trim()) return setError('Ingresa la clave.')
-    setVerificando(true)
-    const { data, error: e } = await supabase.rpc('costeo_verificar_clave', { p_clave: clave })
-    setVerificando(false)
-    if (e || !data) return setError('Clave incorrecta.')
-    onDesbloqueado()
-  }
-
-  return (
-    <Modal titulo="Clave de dirección" onClose={onClose} ancho={380}>
-      <div className="f-group">
-        <label className="f-label" htmlFor="clave-input">Clave</label>
-        <input
-          id="clave-input"
-          className="f-input"
-          type="password"
-          value={clave}
-          onChange={(e) => setClave(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && verificar()}
-          autoFocus
-        />
-      </div>
-      {error && <div className="f-error">{error}</div>}
-      <div className="f-actions">
-        <button className="btn btn-ghost" onClick={onClose}>Cancelar</button>
-        <button className="btn btn-primary" onClick={verificar} disabled={verificando}>
-          {verificando ? 'Verificando…' : 'Desbloquear'}
-        </button>
-      </div>
-    </Modal>
   )
 }
 
