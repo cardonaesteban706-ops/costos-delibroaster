@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from 'react'
+import { createContext, useContext, useEffect, useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
 
 const AuthContext = createContext(null)
@@ -7,20 +7,32 @@ export function AuthProvider({ children }) {
   const [session, setSession] = useState(null)
   const [perfil, setPerfil] = useState(null) // { nombre, rol }
   const [cargando, setCargando] = useState(true)
+  // el rol llega en una segunda consulta: hasta que no esté, no sabemos si es
+  // dueño. Sin esto, App.jsx montaba el router con esDueno=false y el <Navigate>
+  // mandaba al dueño a /insumos antes de que su rol llegara.
+  const [perfilListo, setPerfilListo] = useState(false)
+  const [errorPerfil, setErrorPerfil] = useState('')
+  const usuarioActual = useRef(null)
 
   // Trae el perfil (nombre + rol) del usuario logueado
   async function cargarPerfil(userId) {
+    usuarioActual.current = userId
     const { data, error } = await supabase
       .from('costeo_perfiles')
       .select('nombre, rol')
       .eq('id', userId)
       .single()
+    // descarta respuestas que llegan tarde tras un cambio de usuario o un logout
+    if (usuarioActual.current !== userId) return
     if (error) {
       console.error('No se pudo cargar el perfil:', error.message)
       setPerfil(null)
+      setErrorPerfil('No pudimos cargar tu perfil. Revisa la conexión y recarga.')
     } else {
       setPerfil(data)
+      setErrorPerfil('')
     }
+    setPerfilListo(true)
   }
 
   useEffect(() => {
@@ -28,14 +40,21 @@ export function AuthProvider({ children }) {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       setSession(session)
       if (session?.user) await cargarPerfil(session.user.id)
+      else setPerfilListo(true)
       setCargando(false)
     })
 
     // cambios de sesión (login / logout)
     const { data: sub } = supabase.auth.onAuthStateChange(async (_evt, session) => {
       setSession(session)
-      if (session?.user) await cargarPerfil(session.user.id)
-      else setPerfil(null)
+      if (session?.user) {
+        setPerfilListo(false)
+        await cargarPerfil(session.user.id)
+      } else {
+        usuarioActual.current = null
+        setPerfil(null)
+        setPerfilListo(true)
+      }
     })
 
     return () => sub.subscription.unsubscribe()
@@ -54,6 +73,8 @@ export function AuthProvider({ children }) {
     session,
     perfil,
     cargando,
+    perfilListo,
+    errorPerfil,
     esDueno: perfil?.rol === 'dueno',
     esEncargado: perfil?.rol === 'encargado',
     entrar,

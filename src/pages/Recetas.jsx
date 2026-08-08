@@ -16,14 +16,21 @@ export function ListaRecetas({ esSub }) {
   const [busqueda, setBusqueda] = useState('')
   const [editando, setEditando] = useState(null)
   const [creando, setCreando] = useState(false)
+  const [errorCarga, setErrorCarga] = useState('')
 
   async function cargar() {
     setCargando(true)
-    const { data } = await supabase
+    setErrorCarga('')
+    const { data, error } = await supabase
       .from('costeo_recetas')
-      .select('id, nombre, categoria, es_subreceta, rinde_cant, rinde_unidad, costeo_componentes!costeo_componentes_receta_id_fkey(count)')
+      .select('id, nombre, categoria, es_subreceta, rinde_cant, rinde_unidad, porciones_lote, costeo_componentes!costeo_componentes_receta_id_fkey(count)')
       .eq('es_subreceta', esSub)
       .order('nombre')
+    if (error) {
+      setErrorCarga(error.message || 'No pudimos cargar las recetas.')
+      setCargando(false)
+      return
+    }
     setRecetas(data || [])
     const [{ count: nIns }, { count: nRec }, { count: nSub }] = await Promise.all([
       supabase.from('costeo_insumos').select('*', { count: 'exact', head: true }),
@@ -60,13 +67,18 @@ export function ListaRecetas({ esSub }) {
       <div className="toolbar" style={{ marginTop: 18 }}>
         <div className="search">
           <span className="lupa"><Icono nombre="buscar" size={18} /></span>
-          <input type="text" placeholder={`Buscar ${titulo.toLowerCase()}…`} value={busqueda} onChange={(e) => setBusqueda(e.target.value)} />
+          <input type="text" aria-label={`Buscar ${titulo.toLowerCase()}`} placeholder={`Buscar ${titulo.toLowerCase()}…`} value={busqueda} onChange={(e) => setBusqueda(e.target.value)} />
         </div>
       </div>
 
       <div className="count-row"><span className="count-lbl">{filtradas.length} {titulo.toLowerCase()}</span></div>
 
-      {cargando ? <div className="vacio">Cargando…</div> : busqueda && filtradas.length === 0 ? (
+      {cargando ? <div className="vacio">Cargando…</div> : errorCarga ? (
+        <div className="f-error" style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+          <span style={{ flex: 1 }}>No pudimos cargar {titulo.toLowerCase()}: {errorCarga}</span>
+          <button className="btn btn-ghost" style={{ height: 36 }} onClick={cargar}>Reintentar</button>
+        </div>
+      ) : busqueda && filtradas.length === 0 ? (
         <div className="vacio">
           <div className="vacio-emoji"><Icono nombre="buscar" size={38} /></div>
           Nada por aquí con “{busqueda}”. Prueba con otro nombre.

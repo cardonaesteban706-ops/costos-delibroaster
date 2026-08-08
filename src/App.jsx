@@ -6,18 +6,38 @@ import Recetas from './pages/Recetas'
 import SubRecetas from './pages/SubRecetas'
 import Tablero from './pages/Tablero'
 
-export default function App() {
-  const { session, cargando, esDueno } = useAuth()
+const pantallaCentrada = {
+  minHeight: '100vh', display: 'grid', placeItems: 'center',
+  background: 'var(--cream)', padding: 24, textAlign: 'center',
+}
 
-  if (cargando) {
+export default function App() {
+  const { session, cargando, perfilListo, errorPerfil, esDueno } = useAuth()
+
+  // esperamos también al rol: si montamos el router sin él, el catch-all manda
+  // al dueño a /insumos con replace y ya no hay forma de volver al tablero.
+  if (cargando || (session && !perfilListo)) {
     return (
-      <div style={{ minHeight: '100vh', display: 'grid', placeItems: 'center', background: 'var(--cream)' }}>
+      <div style={pantallaCentrada}>
         <div style={{ color: 'var(--ink-soft)' }}>Cargando…</div>
       </div>
     )
   }
 
   if (!session) return <Login />
+
+  if (errorPerfil) {
+    return (
+      <div style={pantallaCentrada}>
+        <div>
+          <p style={{ color: 'var(--ink)', marginBottom: 14 }}>{errorPerfil}</p>
+          <button className="btn btn-primary" onClick={() => window.location.reload()}>
+            Reintentar
+          </button>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <BrowserRouter>

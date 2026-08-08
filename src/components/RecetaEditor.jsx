@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import Modal from './Modal'
@@ -19,7 +19,11 @@ export default function RecetaEditor({ receta, esSub, onClose, onGuardado }) {
   const [guardando, setGuardando] = useState(false)
   const [error, setError] = useState('')
   const [cargando, setCargando] = useState(true)
-  const [costosLinea, setCostosLinea] = useState({}) // idx -> { unitario, total } — solo se llena si esDueno
+  // clave = id estable de la fila, no su posición: si se indexa por posición,
+  // al borrar un ingrediente las filas de abajo muestran el costo del borrado.
+  const [costosLinea, setCostosLinea] = useState({}) // id -> { unitario, total } — solo se llena si esDueno
+  const proximoId = useRef(0)
+  const nuevoId = () => ++proximoId.current
 
   useEffect(() => {
     async function cargar() {
@@ -33,6 +37,7 @@ export default function RecetaEditor({ receta, esSub, onClose, onGuardado }) {
         const { data } = await supabase.from('costeo_componentes')
           .select('id, insumo_id, subreceta_id, cantidad, unidad').eq('receta_id', receta.id)
         setComps((data || []).map((c) => ({
+          id: nuevoId(),
           tipo: c.insumo_id ? 'insumo' : 'sub',
           ref: c.insumo_id || c.subreceta_id,
           cantidad: c.cantidad, unidad: c.unidad,
@@ -55,26 +60,29 @@ export default function RecetaEditor({ receta, esSub, onClose, onGuardado }) {
 
     async function calcular() {
       const entradas = await Promise.all(
-        comps.map(async (c, idx) => {
-          if (!c.ref || !c.cantidad) return [idx, null]
+        comps.map(async (c) => {
+          if (!c.ref || !(Number(c.cantidad) > 0)) return [c.id, null]
           const fn = c.tipo === 'insumo' ? 'costeo_costo_insumo' : 'costeo_costo_unitario_subreceta'
           const param = c.tipo === 'insumo' ? { p_insumo: Number(c.ref) } : { p_sub: Number(c.ref) }
           const { data, error } = await supabase.rpc(fn, param)
-          if (error || data == null) return [idx, null]
+          if (error || data == null) return [c.id, null]
           const unitario = Number(data)
-          return [idx, { unitario, total: unitario * Number(c.cantidad) }]
+          return [c.id, { unitario, total: unitario * Number(c.cantidad) }]
         })
       )
       if (cancelado) return
       setCostosLinea(Object.fromEntries(entradas))
     }
-    calcular()
-    return () => { cancelado = true }
+
+    // debounce: el efecto depende de todo `comps`, así que sin esto cada tecla
+    // disparaba una RPC por ingrediente (15 ingredientes x 4 dígitos = 60 idas).
+    const t = setTimeout(calcular, 400)
+    return () => { cancelado = true; clearTimeout(t) }
   }, [comps, esDueno])
 
   const costoTotalReceta = Object.values(costosLinea).reduce((s, v) => s + (v?.total || 0), 0)
 
-  function agregar() { setComps([...comps, { tipo: 'insumo', ref: '', cantidad: '', unidad: 'g' }]) }
+  function agregar() { setComps([...comps, { id: nuevoId(), tipo: 'insumo', ref: '', cantidad: '', unidad: 'g' }]) }
   function quitar(idx) { setComps(comps.filter((_, i) => i !== idx)) }
   function cambiar(idx, campo, valor) {
     setComps(comps.map((c, i) => {
@@ -88,39 +96,41 @@ export default function RecetaEditor({ receta, esSub, onClose, onGuardado }) {
   async function guardar() {
     setError('')
     if (!nombre.trim()) return setError('Ponle un nombre.')
-    if (esSub && !rindeCant) return setError('Indica cuánto rinde el lote.')
-    const compsValidos = comps.filter((c) => c.ref && c.cantidad)
+    if (esSub && !(Number(rindeCant) > 0)) return setError('Indica cuánto rinde el lote (un número mayor que cero).')
+    if (!esSub && String(porcionesLote).trim() !== '' && !(Number(porcionesLote) > 0)) {
+      return setError('Las porciones del lote deben ser mayores que cero, o deja el campo vacío.')
+    }
+    // ojo: '0' es un string truthy. Si se cuela, la BD rechaza el insert de componentes
+    // DESPUÉS de que el delete ya borró los viejos, y la receta queda sin ingredientes.
+    const compsTocados = comps.filter((c) => c.ref || String(c.cantidad).trim() !== '')
+    if (compsTocados.some((c) => !c.ref || !(Number(c.cantidad) > 0))) {
+      return setError('Cada ingrediente necesita un producto y una cantidad mayor que cero.')
+    }
+    const compsValidos = compsTocados
     if (compsValidos.length === 0) return setError('Agrega al menos un ingrediente.')
     setGuardando(true)
 
-    const payload = {
-      nombre: nombre.trim(), es_subreceta: esSub, categoria: categoria.trim() || null,
-      rinde_cant: esSub ? Number(rindeCant) : null,
-      rinde_unidad: esSub ? rindeUnidad : null,
-      porciones_lote: !esSub && porcionesLote ? Number(porcionesLote) : null,
-    }
-
-    let recetaId = receta?.id
-    if (recetaId) {
-      const { error } = await supabase.from('costeo_recetas').update(payload).eq('id', recetaId)
-      if (error) { setGuardando(false); return setError(error.message) }
-      await supabase.from('costeo_componentes').delete().eq('receta_id', recetaId)
-    } else {
-      const { data, error } = await supabase.from('costeo_recetas').insert(payload).select('id').single()
-      if (error) { setGuardando(false); return setError(error.message.includes('duplicate') ? 'Ya existe una receta con ese nombre.' : error.message) }
-      recetaId = data.id
-    }
-
-    const filas = compsValidos.map((c) => ({
-      receta_id: recetaId,
-      insumo_id: c.tipo === 'insumo' ? Number(c.ref) : null,
-      subreceta_id: c.tipo === 'sub' ? Number(c.ref) : null,
-      cantidad: Number(c.cantidad),
-      unidad: unidadDe(c.tipo, c.ref),
-    }))
-    const { error: e2 } = await supabase.from('costeo_componentes').insert(filas)
+    // Una sola RPC transaccional en vez de update + delete + insert por separado.
+    // Antes, si el insert de componentes fallaba, el delete ya estaba confirmado
+    // y la receta quedaba sin ingredientes (costo $0 y margen 100% "sano" en el
+    // tablero). Ahora cualquier fallo revierte también el borrado.
+    const { error } = await supabase.rpc('costeo_guardar_receta', {
+      p_id: receta?.id ?? null,
+      p_nombre: nombre.trim(),
+      p_es_subreceta: esSub,
+      p_categoria: categoria.trim() || null,
+      p_rinde_cant: esSub ? Number(rindeCant) : null,
+      p_rinde_unidad: esSub ? rindeUnidad : null,
+      p_porciones_lote: !esSub && Number(porcionesLote) > 0 ? Number(porcionesLote) : null,
+      p_comps: compsValidos.map((c) => ({
+        tipo: c.tipo,
+        ref: Number(c.ref),
+        cantidad: Number(c.cantidad),
+        unidad: unidadDe(c.tipo, c.ref),
+      })),
+    })
     setGuardando(false)
-    if (e2) return setError(e2.message)
+    if (error) return setError(error.message)
     onGuardado()
   }
 
@@ -132,22 +142,22 @@ export default function RecetaEditor({ receta, esSub, onClose, onGuardado }) {
         <>
           <div className="f-row">
             <div className="f-group" style={{ flex: 2 }}>
-              <label className="f-label">Nombre</label>
-              <input className="f-input" value={nombre} onChange={(e) => setNombre(e.target.value)} autoFocus />
+              <label className="f-label" htmlFor="rec-nombre">Nombre</label>
+              <input id="rec-nombre" className="f-input" value={nombre} onChange={(e) => setNombre(e.target.value)} autoFocus />
             </div>
             <div className="f-group">
-              <label className="f-label">Categoría</label>
-              <input className="f-input" placeholder="Broaster…" value={categoria} onChange={(e) => setCategoria(e.target.value)} />
+              <label className="f-label" htmlFor="rec-categoria">Categoría</label>
+              <input id="rec-categoria" className="f-input" placeholder="Broaster…" value={categoria} onChange={(e) => setCategoria(e.target.value)} />
             </div>
           </div>
 
           {esSub && (
             <div className="f-group">
-              <label className="f-label">¿Cuánto rinde el lote?</label>
+              <label className="f-label" htmlFor="rec-rinde">¿Cuánto rinde el lote?</label>
               <div className="f-row">
-                <input className="f-input" type="number" min="0" step="any" placeholder="Cantidad"
+                <input id="rec-rinde" className="f-input" type="number" min="0" step="any" placeholder="Cantidad"
                   value={rindeCant} onChange={(e) => setRindeCant(e.target.value)} />
-                <select className="f-select" value={rindeUnidad} onChange={(e) => setRindeUnidad(e.target.value)}>
+                <select className="f-select" aria-label="Unidad del rendimiento" value={rindeUnidad} onChange={(e) => setRindeUnidad(e.target.value)}>
                   <option value="g">gramos</option><option value="ml">mililitros</option><option value="und">unidades / porciones</option>
                 </select>
               </div>
@@ -157,8 +167,8 @@ export default function RecetaEditor({ receta, esSub, onClose, onGuardado }) {
 
           {!esSub && (
             <div className="f-group">
-              <label className="f-label">¿Este plato se prepara en un lote grande? (opcional)</label>
-              <input className="f-input" type="number" min="0" step="any" placeholder="Ej: 13 porciones — déjalo vacío si ya es por porción individual"
+              <label className="f-label" htmlFor="rec-porciones">¿Este plato se prepara en un lote grande? (opcional)</label>
+              <input id="rec-porciones" className="f-input" type="number" min="0" step="any" placeholder="Ej: 13 porciones — déjalo vacío si ya es por porción individual"
                 value={porcionesLote} onChange={(e) => setPorcionesLote(e.target.value)} />
               <div className="f-hint">
                 Si los ingredientes que agregaste abajo son de un caldero/lote completo (no de una sola porción),
@@ -169,13 +179,14 @@ export default function RecetaEditor({ receta, esSub, onClose, onGuardado }) {
           )}
 
           <div className="f-group">
-            <label className="f-label">Ingredientes</label>
+            {/* encabeza una lista de filas, no un campo: <label> sin destino confunde al lector */}
+            <span className="f-label">Ingredientes</span>
             <div className="comp-list">
               {comps.length === 0 && <div className="comp-empty">Todavía no hay ingredientes.</div>}
               {comps.map((c, idx) => (
-                <div key={idx}>
+                <div key={c.id}>
                   <div className="comp-row">
-                    <select className="f-select" value={c.tipo + ':' + c.ref}
+                    <select className="f-select" aria-label="Ingrediente" value={c.tipo + ':' + c.ref}
                       onChange={(e) => {
                         const [tipo, ref] = e.target.value.split(':')
                         setComps(comps.map((cc, i) => i === idx ? { ...cc, tipo, ref, unidad: unidadDe(tipo, ref) } : cc))
@@ -191,13 +202,14 @@ export default function RecetaEditor({ receta, esSub, onClose, onGuardado }) {
                       )}
                     </select>
                     <input className="f-input" type="number" min="0" step="any" placeholder="Cant."
+                      aria-label="Cantidad del ingrediente"
                       value={c.cantidad} onChange={(e) => cambiar(idx, 'cantidad', e.target.value)} />
                     <span className="comp-unit">{c.ref ? unidadDe(c.tipo, c.ref) : ''}</span>
                     <button className="comp-del" onClick={() => quitar(idx)} aria-label="Quitar"><Icono nombre="cerrar" size={16} /></button>
                   </div>
-                  {esDueno && c.ref && c.cantidad && costosLinea[idx] && (
+                  {esDueno && c.ref && Number(c.cantidad) > 0 && costosLinea[c.id] && (
                     <div className="comp-costo">
-                      {pesos(costosLinea[idx].unitario)} / {unidadDe(c.tipo, c.ref)} · total: <b>{pesos(costosLinea[idx].total)}</b>
+                      {pesos(costosLinea[c.id].unitario)} / {unidadDe(c.tipo, c.ref)} · total: <b>{pesos(costosLinea[c.id].total)}</b>
                     </div>
                   )}
                 </div>
@@ -206,10 +218,10 @@ export default function RecetaEditor({ receta, esSub, onClose, onGuardado }) {
             <button className="comp-add" onClick={agregar}>+ Agregar ingrediente</button>
           </div>
 
-          {esDueno && comps.some((c) => c.ref && c.cantidad) && (
+          {esDueno && comps.some((c) => c.ref && Number(c.cantidad) > 0) && (
             <div className="calc-box">
               Costo total de esta receta: <b>{pesos(costoTotalReceta)}</b>
-              {!esSub && porcionesLote && (
+              {!esSub && Number(porcionesLote) > 0 && (
                 <> · por porción (÷{porcionesLote}): <b>{pesos(costoTotalReceta / Number(porcionesLote))}</b></>
               )}
             </div>

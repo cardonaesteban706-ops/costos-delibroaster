@@ -18,10 +18,19 @@ export default function Insumos() {
   const [creando, setCreando] = useState(false)
   const [eliminando, setEliminando] = useState(null)  // insumo a eliminar
   const [toast, setToast] = useState(null)
+  const [errorCarga, setErrorCarga] = useState('')
 
   async function cargar() {
     setCargando(true)
-    const { data } = await supabase.from('costeo_insumos').select('*').order('nombre')
+    setErrorCarga('')
+    const { data, error } = await supabase.from('costeo_insumos').select('*').order('nombre')
+    // sin esto, un fallo de red se veía igual que "no hay insumos" e invitaba
+    // a volver a crearlos todos duplicados.
+    if (error) {
+      setErrorCarga(error.message || 'No pudimos cargar los insumos.')
+      setCargando(false)
+      return
+    }
     setInsumos(data || [])
     const [{ count: nRec }, { count: nSub }] = await Promise.all([
       supabase.from('costeo_recetas').select('*', { count: 'exact', head: true }).eq('es_subreceta', false),
@@ -70,7 +79,7 @@ export default function Insumos() {
         <div className="search">
           <span className="lupa"><Icono nombre="buscar" size={18} /></span>
           <input
-            type="text" placeholder="Buscar insumo… (tomate, aceite, pollo)"
+            type="text" aria-label="Buscar insumo" placeholder="Buscar insumo… (tomate, aceite, pollo)"
             value={busqueda} onChange={(e) => setBusqueda(e.target.value)}
           />
         </div>
@@ -89,10 +98,20 @@ export default function Insumos() {
 
       {cargando ? (
         <div className="vacio">Cargando insumos…</div>
-      ) : filtrados.length === 0 ? (
+      ) : errorCarga ? (
+        <div className="f-error" style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+          <span style={{ flex: 1 }}>No pudimos cargar los insumos: {errorCarga}</span>
+          <button className="btn btn-ghost" style={{ height: 36 }} onClick={cargar}>Reintentar</button>
+        </div>
+      ) : filtrados.length === 0 && busqueda ? (
         <div className="vacio">
           <div className="vacio-emoji"><Icono nombre="buscar" size={38} /></div>
           Nada por aquí con “{busqueda}”. Prueba con otro nombre.
+        </div>
+      ) : filtrados.length === 0 ? (
+        <div className="vacio">
+          <div className="vacio-emoji"><Icono nombre="olla" size={38} /></div>
+          Todavía no hay insumos. Crea el primero con “+ Nuevo insumo”.
         </div>
       ) : (
         filtrados.map((i) => (
@@ -200,12 +219,20 @@ function EditarPrecio({ insumo, onClose, onGuardado }) {
   async function guardar() {
     setError('')
     if (!nombre.trim()) { setError('Ponle un nombre al insumo.'); return }
+    // la BD ahora exige presentacion_precio > 0; validamos aquí para dar un
+    // mensaje claro en vez de dejar salir el error crudo de Postgres en inglés.
+    if (!(cantBase > 0)) { setError('La cantidad debe ser mayor que cero.'); return }
+    if (!(Number(precio) > 0)) { setError('El precio debe ser mayor que cero.'); return }
     setGuardando(true)
     const { error: e } = await supabase
       .from('costeo_insumos')
       .update({
         nombre: nombre.trim(), presentacion_precio: Number(precio), presentacion_cant: cantBase,
         merma_pct: mermaFrac, unidad_compra: unidad,
+        // guardar = "revisé este precio hoy", aunque no haya cambiado. El trigger
+        // solo toca actualizado_en cuando el valor cambia, así que confirmar un
+        // precio que sigue igual nunca lograba quitarle el chip rojo de "viejo".
+        actualizado_en: new Date().toISOString(),
       })
       .eq('id', insumo.id)
     if (e) {
@@ -221,16 +248,16 @@ function EditarPrecio({ insumo, onClose, onGuardado }) {
   return (
     <Modal titulo={nombre || insumo.nombre} subtitulo="Actualiza el nombre, la presentación, el precio y la merma." onClose={onClose}>
       <div className="f-group">
-        <label className="f-label">Nombre</label>
-        <input className="f-input" value={nombre} onChange={(e) => setNombre(e.target.value)} autoFocus />
+        <label className="f-label" htmlFor="ep-nombre">Nombre</label>
+        <input id="ep-nombre" className="f-input" value={nombre} onChange={(e) => setNombre(e.target.value)} autoFocus />
       </div>
 
       <div className="f-group">
-        <label className="f-label">¿Cómo lo compras?</label>
+        <label className="f-label" htmlFor="ep-cant">¿Cómo lo compras?</label>
         <div className="f-row">
-          <input className="f-input" type="number" min="0" step="any" value={cantCompra}
+          <input id="ep-cant" className="f-input" type="number" min="0" step="any" value={cantCompra}
             onChange={(e) => setCantCompra(e.target.value)} />
-          <select className="f-select" value={unidad} onChange={(e) => setUnidad(e.target.value)}>
+          <select className="f-select" aria-label="Unidad de compra" value={unidad} onChange={(e) => setUnidad(e.target.value)}>
             {opciones.map((o) => <option key={o.u} value={o.u}>{o.etiqueta}</option>)}
           </select>
         </div>
@@ -238,13 +265,13 @@ function EditarPrecio({ insumo, onClose, onGuardado }) {
 
       <div className="f-row">
         <div className="f-group">
-          <label className="f-label">Precio de esa presentación</label>
-          <input className="f-input" type="number" min="0" step="any" value={precio}
+          <label className="f-label" htmlFor="ep-precio">Precio de esa presentación</label>
+          <input id="ep-precio" className="f-input" type="number" min="0" step="any" value={precio}
             onChange={(e) => setPrecio(e.target.value)} />
         </div>
         <div className="f-group">
-          <label className="f-label">Merma % (opcional)</label>
-          <input className="f-input" type="number" min="0" max="99" step="any" placeholder="0"
+          <label className="f-label" htmlFor="ep-merma">Merma % (opcional)</label>
+          <input id="ep-merma" className="f-input" type="number" min="0" max="99" step="any" placeholder="0"
             value={merma} onChange={(e) => setMerma(e.target.value)} />
         </div>
       </div>
@@ -258,7 +285,7 @@ function EditarPrecio({ insumo, onClose, onGuardado }) {
 
       <div className="f-actions">
         <button className="btn btn-ghost" onClick={onClose}>Cancelar</button>
-        <button className="btn btn-primary" onClick={guardar} disabled={guardando || !cantBase || precio === '' || !nombre.trim()}>
+        <button className="btn btn-primary" onClick={guardar} disabled={guardando || !(cantBase > 0) || !(Number(precio) > 0) || !nombre.trim()}>
           {guardando ? 'Guardando…' : 'Guardar cambios'}
         </button>
       </div>
@@ -291,7 +318,8 @@ function CrearInsumo({ onClose, onCreado }) {
   async function guardar() {
     setError('')
     if (!nombre.trim()) return setError('Ponle un nombre al insumo.')
-    if (!cantBase || !precio) return setError('Falta la cantidad o el precio.')
+    if (!(cantBase > 0)) return setError('La cantidad debe ser mayor que cero.')
+    if (!(Number(precio) > 0)) return setError('El precio debe ser mayor que cero.')
     setGuardando(true)
     const { error } = await supabase.from('costeo_insumos').insert({
       nombre: nombre.trim(), unidad_base: base,
@@ -306,27 +334,28 @@ function CrearInsumo({ onClose, onCreado }) {
   return (
     <Modal titulo="Nuevo insumo" subtitulo="Registra algo que se compra para la cocina." onClose={onClose} ancho={500}>
       <div className="f-group">
-        <label className="f-label">Nombre</label>
-        <input className="f-input" placeholder="Tomate, aceite, pechuga…" value={nombre}
+        <label className="f-label" htmlFor="ci-nombre">Nombre</label>
+        <input id="ci-nombre" className="f-input" placeholder="Tomate, aceite, pechuga…" value={nombre}
           onChange={(e) => setNombre(e.target.value)} autoFocus />
       </div>
 
       <div className="f-group">
-        <label className="f-label">¿En qué se mide?</label>
-        <div className="f-row">
-          <button type="button" className={'f-select' + (base === 'g' ? ' sel' : '')}
+        {/* son botones, no un campo: se anuncian como grupo con estado */}
+        <span className="f-label" id="ci-medida">¿En qué se mide?</span>
+        <div className="f-row" role="group" aria-labelledby="ci-medida">
+          <button type="button" className={'f-select' + (base === 'g' ? ' sel' : '')} aria-pressed={base === 'g'}
             style={selBtn(base === 'g')} onClick={() => cambiarBase('g')}>Peso (g / kg / lb)</button>
-          <button type="button" style={selBtn(base === 'ml')} onClick={() => cambiarBase('ml')}>Volumen (ml / L)</button>
-          <button type="button" style={selBtn(base === 'und')} onClick={() => cambiarBase('und')}>Unidad</button>
+          <button type="button" aria-pressed={base === 'ml'} style={selBtn(base === 'ml')} onClick={() => cambiarBase('ml')}>Volumen (ml / L)</button>
+          <button type="button" aria-pressed={base === 'und'} style={selBtn(base === 'und')} onClick={() => cambiarBase('und')}>Unidad</button>
         </div>
       </div>
 
       <div className="f-group">
-        <label className="f-label">¿Cómo lo compras?</label>
+        <label className="f-label" htmlFor="ci-cant">¿Cómo lo compras?</label>
         <div className="f-row">
-          <input className="f-input" type="number" min="0" step="any" placeholder="Cantidad"
+          <input id="ci-cant" className="f-input" type="number" min="0" step="any" placeholder="Cantidad"
             value={cantCompra} onChange={(e) => setCantCompra(e.target.value)} />
-          <select className="f-select" value={unidad} onChange={(e) => setUnidad(e.target.value)}>
+          <select className="f-select" aria-label="Unidad de compra" value={unidad} onChange={(e) => setUnidad(e.target.value)}>
             {opciones.map((o) => <option key={o.u} value={o.u}>{o.etiqueta}</option>)}
           </select>
         </div>
@@ -335,13 +364,13 @@ function CrearInsumo({ onClose, onCreado }) {
 
       <div className="f-row">
         <div className="f-group">
-          <label className="f-label">Precio de compra</label>
-          <input className="f-input" type="number" min="0" step="any" placeholder="$"
+          <label className="f-label" htmlFor="ci-precio">Precio de compra</label>
+          <input id="ci-precio" className="f-input" type="number" min="0" step="any" placeholder="$"
             value={precio} onChange={(e) => setPrecio(e.target.value)} />
         </div>
         <div className="f-group">
-          <label className="f-label">Merma % (opcional)</label>
-          <input className="f-input" type="number" min="0" max="99" step="any" placeholder="0"
+          <label className="f-label" htmlFor="ci-merma">Merma % (opcional)</label>
+          <input id="ci-merma" className="f-input" type="number" min="0" max="99" step="any" placeholder="0"
             value={merma} onChange={(e) => setMerma(e.target.value)} />
         </div>
       </div>
@@ -367,13 +396,17 @@ function EliminarInsumo({ insumo, onClose, onEliminado }) {
   const [usos, setUsos] = useState([])   // recetas/sub-recetas donde se usa
   const [eliminando, setEliminando] = useState(false)
   const [error, setError] = useState('')
+  const [fallo, setFallo] = useState(false)  // la verificación no pudo completarse
 
   useEffect(() => {
     async function verificar() {
       const { data, error: e } = await supabase.rpc('costeo_componentes_insumo', { p_insumo: insumo.id })
       setVerificando(false)
       if (e) {
-        setError('No se pudo verificar si está en uso.')
+        // sin este flag, usos quedaba [] y la UI afirmaba "no está en uso,
+        // está bien eliminarlo" justo cuando no tiene forma de saberlo.
+        setFallo(true)
+        setError('No se pudo verificar si está en uso. Revisa la conexión e intenta de nuevo.')
         return
       }
       setUsos(data || [])
@@ -441,7 +474,9 @@ function EliminarInsumo({ insumo, onClose, onEliminado }) {
         </>
       )}
 
-      {!verificando && !enUso && (
+      {!verificando && fallo && <div className="f-error">{error}</div>}
+
+      {!verificando && !fallo && !enUso && (
         <>
           <p className="f-hint">Este insumo no está siendo usado en ninguna receta. Está bien eliminarlo.</p>
           {error && <div className="f-error">{error}</div>}
@@ -452,7 +487,7 @@ function EliminarInsumo({ insumo, onClose, onEliminado }) {
         <button className="btn btn-ghost" onClick={onClose} disabled={eliminando}>
           Cancelar
         </button>
-        {!enUso && !verificando && (
+        {!enUso && !verificando && !fallo && (
           <button
             className="btn btn-danger"
             onClick={eliminarConfirmado}

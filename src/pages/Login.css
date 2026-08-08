@@ -89,6 +89,12 @@
 .form-row { display: flex; align-items: center; justify-content: space-between; margin-top: 16px; }
 .remember { display: flex; align-items: center; gap: 9px; font-size: 0.9rem; color: var(--ink-soft); user-select: none; cursor: pointer; }
 .remember input { width: 18px; height: 18px; accent-color: var(--brick); }
+.form-ayuda {
+  margin-top: 12px; padding: 12px 14px; border-radius: 12px;
+  background: #F7F0E4; border: 1px solid rgba(44, 36, 32, 0.10);
+  font-size: 0.86rem; color: #6E6055; line-height: 1.45;
+}
+
 .forgot { font-size: 0.9rem; color: var(--brick); font-weight: 500; text-decoration: none; }
 .forgot:hover { text-decoration: underline; }
 

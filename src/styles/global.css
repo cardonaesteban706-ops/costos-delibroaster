@@ -13,7 +13,9 @@
   --amber-soft:   #F4D9A8;
   --ink:          #2C2420;
   --ink-soft:     #6E6055;
-  --ink-faint:    #9A8A7C;
+  /* #9A8A7C daba 3.2:1 sobre --card, por debajo de AA para textos de 11-13px
+     (etiquetas "Costo"/"Venta", hints, contadores). Este da ~4.8:1. */
+  --ink-faint:    #7A6A5B;
   --green:        #3E7B3B;
   --green-soft:   #E8F0DD;
   --warn:         #C77F1E;
@@ -50,6 +52,9 @@ a { color: inherit; }
 input, button, select, textarea { font-family: inherit; font-size: 1rem; }
 
 button { cursor: pointer; border: none; background: none; }
+
+/* foco visible por teclado: los botones no tenían ninguna indicación */
+:focus-visible { outline: 2px solid var(--brick); outline-offset: 2px; border-radius: 4px; }
 
 ::placeholder { color: var(--ink-faint); }
 

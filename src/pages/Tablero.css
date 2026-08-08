@@ -92,7 +92,8 @@
   border: none; background: transparent; width: 100%; height: 100%;
   font-family: var(--font-display); font-size: 1.1rem; color: var(--ink); text-align: right;
 }
-.promo-input-wrap input:focus { outline: none; }
+/* tenía outline:none sin reemplazo: era el único campo invisible al tabular */
+.promo-input-wrap input:focus { outline: none; border-color: var(--brick); box-shadow: 0 0 0 3px rgba(162, 51, 31, 0.1); }
 .promo-input-wrap span { color: var(--ink-soft); font-size: 0.95rem; }
 
 .promo-vacio { color: var(--ink-faint); font-size: 0.92rem; padding: 18px 4px 4px; }

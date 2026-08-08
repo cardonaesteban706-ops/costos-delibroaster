@@ -9,7 +9,10 @@
 .modal-card {
   width: 100%; background: var(--card); border-radius: var(--radius-lg);
   box-shadow: var(--shadow-pop);
-  max-height: 90vh; overflow-y: auto;
+  /* dvh sigue la barra de direcciones en móvil; vh queda de respaldo */
+  max-height: 90vh;
+  max-height: 90dvh;
+  overflow-y: auto;
 }
 .modal-head { display: flex; justify-content: space-between; align-items: flex-start; padding: 24px 26px 0; }
 .modal-title { font-size: 1.5rem; }
@@ -53,6 +56,7 @@
   .modal-overlay { padding: 0; place-items: end center; }
   .modal-card {
     max-height: 94vh;
+    max-height: 94dvh;
     border-bottom-left-radius: 0; border-bottom-right-radius: 0;
   }
   .modal-head { padding: 20px 18px 0; }

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useAuth } from '../context/AuthContext'
+import { recordarSesion } from '../lib/supabase'
 import './Login.css'
 
 function LogoPollo() {
@@ -20,11 +21,14 @@ export default function Login() {
   const [recordar, setRecordar] = useState(true)
   const [error, setError] = useState('')
   const [enviando, setEnviando] = useState(false)
+  const [ayuda, setAyuda] = useState(false)
 
   async function onSubmit(e) {
     e.preventDefault()
     setError('')
     setEnviando(true)
+    // hay que fijarlo ANTES de entrar: supabase guarda la sesión durante el login
+    recordarSesion(recordar)
     const err = await entrar(email.trim(), password)
     setEnviando(false)
     if (err) {
@@ -56,10 +60,12 @@ export default function Login() {
           </p>
         </div>
 
+        {/* aproximados a propósito: esta pantalla es previa al login y no puede
+            consultar la base, así que un número exacto quedaría desactualizado */}
         <div className="hero-stats">
-          <div><div className="stat-num">104</div><div className="stat-lab">insumos</div></div>
-          <div><div className="stat-num">2</div><div className="stat-lab">platos</div></div>
-          <div><div className="stat-num">6</div><div className="stat-lab">sub-recetas</div></div>
+          <div><div className="stat-num">100+</div><div className="stat-lab">insumos</div></div>
+          <div><div className="stat-num">60+</div><div className="stat-lab">platos</div></div>
+          <div><div className="stat-num">30+</div><div className="stat-lab">sub-recetas</div></div>
         </div>
       </section>
 
@@ -91,8 +97,17 @@ export default function Login() {
               <input type="checkbox" checked={recordar} onChange={(e) => setRecordar(e.target.checked)} />
               Recordarme en este equipo
             </label>
-            <a className="forgot" href="#" onClick={(e) => e.preventDefault()}>¿Olvidaste la clave?</a>
+            <button type="button" className="forgot" onClick={() => setAyuda(true)}>
+              ¿Olvidaste la clave?
+            </button>
           </div>
+
+          {ayuda && (
+            <div className="form-ayuda">
+              Las claves las maneja administración. Escríbele a Esteban para que te
+              genere una nueva — desde aquí no se puede restablecer sola.
+            </div>
+          )}
 
           {error && <div className="error-msg">{error}</div>}
 

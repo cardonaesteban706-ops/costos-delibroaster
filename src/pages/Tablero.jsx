@@ -19,6 +19,7 @@ export default function Tablero() {
   const [mostrarPromos, setMostrarPromos] = useState(false)
   const [margenObjetivo, setMargenObjetivo] = useState(MARGEN_PROMO_DEFAULT) // en %
   const [busquedaPromo, setBusquedaPromo] = useState('')
+  const [errorCarga, setErrorCarga] = useState('')
 
   // trae la receta completa (con es_subreceta, categoria, etc.) y abre el editor
   async function abrirReceta(platoId) {
@@ -43,14 +44,20 @@ export default function Tablero() {
   }, [])
 
   async function cargarPlatos() {
+    setErrorCarga('')
     const { data, error } = await supabase.rpc('costeo_tablero')
-    if (!error) setPlatos(data || [])
+    // antes esto era `if (!error)`: al fallar, platos quedaba en null y el
+    // tablero mostraba "0 platos / 0% margen" como si fuera un dato real.
+    if (error) { setErrorCarga(error.message || 'No pudimos cargar el tablero.'); return }
+    setPlatos(data || [])
   }
 
   useEffect(() => { cargarPlatos() }, [])
 
   const resumen = useMemo(() => {
-    if (!platos || platos.length === 0) return { n: 0, margenProm: 0, bajos: 0 }
+    // null = todavía no sabemos; distinto de "cero platos"
+    if (!platos) return { n: null, margenProm: null, bajos: null }
+    if (platos.length === 0) return { n: 0, margenProm: 0, bajos: 0 }
     const conVenta = platos.filter((p) => p.precio_venta != null)
     const margenProm = conVenta.length
       ? conVenta.reduce((s, p) => s + Number(p.margen || 0), 0) / conVenta.length
@@ -82,6 +89,10 @@ export default function Tablero() {
         const rebaja = p.precio_venta - precioPromo
         return { ...p, precioPromo, rebaja, rebajaPct: rebaja / p.precio_venta }
       })
+      // el filtro de arriba usa el precio exacto, pero precioPromo redondea hacia
+      // arriba a la centena: sin esto salían filas "$28.000 → $28.000 · -0%", e
+      // incluso rebajas negativas (subir el precio) si el precio no es múltiplo de 100.
+      .filter((p) => p.rebaja > 0)
       .sort((a, b) => b.rebajaPct - a.rebajaPct)
   }, [platos, margenObjetivo, busquedaPromo])
 
@@ -111,21 +122,28 @@ export default function Tablero() {
         />
       )}
 
+      {errorCarga && (
+        <div className="f-error" style={{ marginTop: 18, display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+          <span style={{ flex: 1 }}>No pudimos cargar el tablero: {errorCarga}</span>
+          <button className="btn btn-ghost" style={{ height: 36 }} onClick={cargarPlatos}>Reintentar</button>
+        </div>
+      )}
+
       <div style={{ marginTop: 22 }}>
         <div className="resumen-grid">
           <div className="resumen-card">
             <div className="resumen-lbl">Platos en carta</div>
-            <div className="resumen-num">{resumen.n}</div>
+            <div className="resumen-num">{resumen.n ?? '—'}</div>
             <div className="resumen-sub">todos con receta y costo vigente</div>
           </div>
           <div className="resumen-card oscura">
             <div className="resumen-lbl">Margen promedio</div>
-            <div className="resumen-num">{Math.round(resumen.margenProm * 100)}%</div>
+            <div className="resumen-num">{resumen.margenProm != null ? Math.round(resumen.margenProm * 100) + '%' : '—'}</div>
             <div className="resumen-sub">sobre los platos con precio de venta</div>
           </div>
           <div className={'resumen-card' + (resumen.bajos > 0 ? ' alerta' : '')}>
             <div className="resumen-lbl">Bajo el margen sano</div>
-            <div className="resumen-num">{resumen.bajos}</div>
+            <div className="resumen-num">{resumen.bajos ?? '—'}</div>
             <div className="resumen-sub">platos por debajo del {Math.round(MARGEN_SANO * 100)}%</div>
           </div>
         </div>
@@ -134,7 +152,7 @@ export default function Tablero() {
           <div className="search">
             <span className="lupa"><Icono nombre="buscar" size={18} /></span>
             <input
-              type="text" placeholder="Buscar plato… (nombre o categoría)"
+              type="text" aria-label="Buscar plato" placeholder="Buscar plato… (nombre o categoría)"
               value={busqueda} onChange={(e) => setBusqueda(e.target.value)}
             />
           </div>
@@ -229,9 +247,9 @@ function PromoPanel({ margenObjetivo, setMargenObjetivo, candidatos, busqueda, s
           <div className="promo-sub">Platos con margen actual por encima del objetivo — hay espacio para bajar el precio y seguir dejando ese margen.</div>
         </div>
         <div className="promo-control">
-          <label className="f-label" style={{ marginBottom: 4 }}>Margen objetivo</label>
+          <label className="f-label" style={{ marginBottom: 4 }} htmlFor="promo-objetivo">Margen objetivo</label>
           <div className="promo-input-wrap">
-            <input type="number" min="1" max="90" value={margenObjetivo}
+            <input id="promo-objetivo" type="number" min="1" max="90" value={margenObjetivo}
               onChange={(e) => setMargenObjetivo(e.target.value)} />
             <span>%</span>
           </div>
@@ -241,7 +259,7 @@ function PromoPanel({ margenObjetivo, setMargenObjetivo, candidatos, busqueda, s
       <div className="search promo-search">
         <span className="lupa"><Icono nombre="buscar" size={18} /></span>
         <input
-          type="text" placeholder="Buscar plato… (nombre o categoría)"
+          type="text" aria-label="Buscar plato candidato a promoción" placeholder="Buscar plato… (nombre o categoría)"
           value={busqueda} onChange={(e) => setBusqueda(e.target.value)}
         />
       </div>
@@ -284,7 +302,7 @@ function PrecioVenta({ plato, onClose, onGuardado }) {
 
   async function guardar() {
     setError('')
-    if (!precio) return setError('Escribe un precio.')
+    if (!(Number(precio) > 0)) return setError('Escribe un precio mayor que cero.')
     setGuardando(true)
     const { error } = await supabase
       .from('costeo_venta')
@@ -294,13 +312,15 @@ function PrecioVenta({ plato, onClose, onGuardado }) {
     onGuardado()
   }
 
-  const margenProy = precio && plato.costo ? (Number(precio) - plato.costo) / Number(precio) : null
+  const margenProy = Number(precio) > 0 && plato.costo != null
+    ? (Number(precio) - Number(plato.costo)) / Number(precio)
+    : null
 
   return (
     <Modal titulo={plato.nombre} subtitulo="Precio de venta al público." onClose={onClose}>
       <div className="f-group">
-        <label className="f-label">Precio de venta</label>
-        <input className="f-input" type="number" min="0" step="any" value={precio}
+        <label className="f-label" htmlFor="pv-precio">Precio de venta</label>
+        <input id="pv-precio" className="f-input" type="number" min="0" step="any" value={precio}
           onChange={(e) => setPrecio(e.target.value)} autoFocus />
       </div>
       <div className="calc-box">

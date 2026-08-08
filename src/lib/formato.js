@@ -1,6 +1,8 @@
 // Formato de pesos colombianos
 export function pesos(n) {
-  if (n == null || isNaN(n)) return '—'
+  // Number.isFinite descarta también Infinity (isNaN lo dejaba pasar como "$ ∞")
+  // y '' (que Number convierte en 0 y se leía como un costo real de $0).
+  if (n == null || n === '' || !Number.isFinite(Number(n))) return '—'
   return new Intl.NumberFormat('es-CO', {
     style: 'currency', currency: 'COP', maximumFractionDigits: 0,
   }).format(n)
