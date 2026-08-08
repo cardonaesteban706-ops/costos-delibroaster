@@ -1,21 +1,42 @@
 .usos2 {
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 14px;
 }
 
-.usos2-estado,
 .usos-estado {
   color: var(--ink-soft);
   font-size: 0.92rem;
   padding: 6px 0;
 }
 
+.usos2-resumen {
+  font-size: 0.88rem;
+  color: var(--ink-soft);
+}
+
+.usos2-resumen b {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.usos2-resumen-detalle {
+  color: var(--ink-faint);
+}
+
+.usos2-buscar {
+  height: 42px !important;
+}
+
+.usos2-grupo + .usos2-grupo {
+  margin-top: 4px;
+}
+
 .usos2-grupo-titulo {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 0.78rem;
+  font-size: 0.76rem;
   font-weight: 600;
   color: var(--ink-soft);
   text-transform: uppercase;
@@ -27,16 +48,24 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 20px;
-  height: 20px;
+  min-width: 19px;
+  height: 19px;
   padding: 0 6px;
   border-radius: 999px;
   background: var(--cream-soft);
   border: 1px solid var(--hairline);
-  font-size: 0.72rem;
+  font-size: 0.7rem;
   font-weight: 600;
   color: var(--ink-soft);
   letter-spacing: 0;
+}
+
+/* sub-etiqueta: solo cuando conviven directos e indirectos, para explicar
+   por qué el segundo bloque "no se ve tan obvio" en la lista */
+.usos2-sublabel {
+  font-size: 0.74rem;
+  color: var(--ink-faint);
+  margin: 10px 0 6px 2px;
 }
 
 .usos2-lista {
@@ -51,7 +80,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 11px 14px;
+  padding: 10px 14px;
   border-bottom: 1px solid var(--hairline-soft);
 }
 
@@ -67,43 +96,25 @@
 .usos2-nombre {
   font-weight: 500;
   color: var(--ink);
-  font-size: 0.95rem;
+  font-size: 0.93rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .usos2-meta {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-  margin-top: 3px;
-}
-
-.usos2-cat {
-  font-size: 0.82rem;
+  font-size: 0.78rem;
   color: var(--ink-faint);
-}
-
-.usos2-badge {
-  font-size: 0.74rem;
-  font-weight: 500;
-  padding: 2px 8px;
-  border-radius: 999px;
-  line-height: 1.4;
-}
-
-.usos2-badge.directo {
-  background: var(--green-soft);
-  color: var(--green);
-}
-
-.usos2-badge.via {
-  background: var(--amber-soft);
-  color: var(--brick-dark);
+  margin-top: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .usos2-costo {
   font-weight: 600;
   color: var(--brick);
-  font-size: 0.95rem;
+  font-size: 0.92rem;
   white-space: nowrap;
+  flex-shrink: 0;
 }
