@@ -5,6 +5,7 @@ import Insumos from './pages/Insumos'
 import Recetas from './pages/Recetas'
 import SubRecetas from './pages/SubRecetas'
 import Tablero from './pages/Tablero'
+import Auditoria from './pages/Auditoria'
 
 const pantallaCentrada = {
   minHeight: '100vh', display: 'grid', placeItems: 'center',
@@ -46,6 +47,7 @@ export default function App() {
         <Route path="/recetas" element={<Recetas />} />
         <Route path="/subrecetas" element={<SubRecetas />} />
         {esDueno && <Route path="/tablero" element={<Tablero />} />}
+        {esDueno && <Route path="/auditoria" element={<Auditoria />} />}
         <Route path="*" element={<Navigate to={esDueno ? '/tablero' : '/insumos'} replace />} />
       </Routes>
     </BrowserRouter>

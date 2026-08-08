@@ -43,6 +43,9 @@ export default function Layout({ conteos, children }) {
               <NavLink to="/tablero" className={({ isActive }) => 'nav-item' + (isActive ? ' activo' : '')}>
                 <span className="nav-left"><span className="nav-dot" />Tablero de costos</span>
               </NavLink>
+              <NavLink to="/auditoria" className={({ isActive }) => 'nav-item' + (isActive ? ' activo' : '')}>
+                <span className="nav-left"><span className="nav-dot" />Auditoría</span>
+              </NavLink>
             </>
           )}
 

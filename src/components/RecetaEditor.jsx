@@ -22,6 +22,7 @@ export default function RecetaEditor({ receta, esSub, onClose, onGuardado }) {
   // clave = id estable de la fila, no su posición: si se indexa por posición,
   // al borrar un ingrediente las filas de abajo muestran el costo del borrado.
   const [costosLinea, setCostosLinea] = useState({}) // id -> { unitario, total } — solo se llena si esDueno
+  const [verEnComponentes, setVerEnComponentes] = useState(null) // comp a ver dónde se usa
   const proximoId = useRef(0)
   const nuevoId = () => ++proximoId.current
 
@@ -136,6 +137,18 @@ export default function RecetaEditor({ receta, esSub, onClose, onGuardado }) {
 
   const titulo = receta ? nombre : (esSub ? 'Nueva sub-receta' : 'Nueva receta')
 
+  if (verEnComponentes) {
+    return (
+      <VerEnComponentes
+        comp={verEnComponentes}
+        insumos={insumos}
+        subrecetas={subrecetas}
+        esDueno={esDueno}
+        onClose={() => setVerEnComponentes(null)}
+      />
+    )
+  }
+
   return (
     <Modal titulo={receta ? 'Editar' : titulo} subtitulo={esSub ? 'Una preparación que se hace en la cocina.' : 'Un plato de la carta.'} onClose={onClose} ancho={560}>
       {cargando ? <div style={{ padding: 20, color: 'var(--ink-soft)' }}>Cargando…</div> : (
@@ -205,6 +218,11 @@ export default function RecetaEditor({ receta, esSub, onClose, onGuardado }) {
                       aria-label="Cantidad del ingrediente"
                       value={c.cantidad} onChange={(e) => cambiar(idx, 'cantidad', e.target.value)} />
                     <span className="comp-unit">{c.ref ? unidadDe(c.tipo, c.ref) : ''}</span>
+                    {c.ref && (
+                      <button className="comp-del" onClick={() => setVerEnComponentes(c)} aria-label="Ver en qué recetas se usa" title="Ver en qué recetas se usa">
+                        <Icono nombre="buscar" size={16} />
+                      </button>
+                    )}
                     <button className="comp-del" onClick={() => quitar(idx)} aria-label="Quitar"><Icono nombre="cerrar" size={16} /></button>
                   </div>
                   {esDueno && c.ref && Number(c.cantidad) > 0 && costosLinea[c.id] && (
@@ -237,6 +255,102 @@ export default function RecetaEditor({ receta, esSub, onClose, onGuardado }) {
           </div>
         </>
       )}
+    </Modal>
+  )
+}
+
+function VerEnComponentes({ comp, insumos, subrecetas, esDueno, onClose }) {
+  const [usos, setUsos] = useState(null)
+  const [error, setError] = useState('')
+  const [cargando, setCargando] = useState(true)
+
+  useEffect(() => {
+    async function cargar() {
+      setCargando(true)
+      setError('')
+      const { data, error: e } = await supabase.rpc('costeo_platos_que_usan_insumo', {
+        p_insumo: comp.tipo === 'insumo' ? Number(comp.ref) : null
+      })
+      setCargando(false)
+      // si es sub-receta, mostramos todos menos la actual
+      if (comp.tipo === 'sub') {
+        if (e) {
+          setError(e.message || 'No pudimos cargar.')
+          return
+        }
+        setUsos(data || [])
+      } else {
+        if (e) {
+          setError(e.message || 'No pudimos cargar.')
+          return
+        }
+        setUsos(data || [])
+      }
+    }
+    cargar()
+  }, [comp])
+
+  const nombre = comp.tipo === 'insumo'
+    ? insumos.find((i) => i.id === Number(comp.ref))?.nombre || '—'
+    : subrecetas.find((s) => s.id === Number(comp.ref))?.nombre || '—'
+
+  const platosFinales = (usos || []).filter((p) => !p.es_subreceta)
+  const subrecetasUsos = (usos || []).filter((p) => p.es_subreceta)
+
+  return (
+    <Modal titulo="Usado en" subtitulo={nombre} onClose={onClose} ancho={480}>
+      {cargando && <div className="f-hint">Cargando…</div>}
+
+      {error && <div className="f-error">{error}</div>}
+
+      {!cargando && !error && usos && usos.length === 0 && (
+        <div className="f-hint">Este ingrediente no se usa en ninguna otra receta todavía.</div>
+      )}
+
+      {!cargando && !error && usos && usos.length > 0 && (
+        <>
+          {platosFinales.length > 0 && (
+            <div style={{ marginBottom: 20 }}>
+              <div style={{ fontWeight: 600, marginBottom: 12, fontSize: '0.95rem', color: 'var(--ink)' }}>Platos</div>
+              <div className="usos-lista">
+                {platosFinales.map((p) => (
+                  <div className="usos-item" key={p.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                      <div style={{ fontWeight: 500 }}>{p.nombre}</div>
+                      {p.categoria && <div style={{ fontSize: '0.85rem', color: 'var(--ink-soft)' }}>{p.categoria}</div>}
+                    </div>
+                    {esDueno && comp.tipo === 'insumo' && p.costo != null && (
+                      <div style={{ fontSize: '0.95rem', fontWeight: 500, color: 'var(--brick)', whiteSpace: 'nowrap', marginLeft: 12 }}>
+                        {pesos(p.costo)}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {subrecetasUsos.length > 0 && (
+            <div>
+              <div style={{ fontWeight: 600, marginBottom: 12, fontSize: '0.95rem', color: 'var(--ink)' }}>Usado en sub-recetas</div>
+              <div className="usos-lista">
+                {subrecetasUsos.map((p) => (
+                  <div className="usos-item" key={p.id}>
+                    <div>
+                      <div style={{ fontWeight: 500 }}>{p.nombre}</div>
+                      {p.categoria && <div style={{ fontSize: '0.85rem', color: 'var(--ink-soft)' }}>{p.categoria}</div>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </>
+      )}
+
+      <div className="f-actions" style={{ marginTop: 20 }}>
+        <button className="btn btn-ghost" onClick={onClose}>Cerrar</button>
+      </div>
     </Modal>
   )
 }

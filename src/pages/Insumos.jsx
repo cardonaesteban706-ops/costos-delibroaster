@@ -17,6 +17,7 @@ export default function Insumos() {
   const [editando, setEditando] = useState(null)   // insumo a editar
   const [creando, setCreando] = useState(false)
   const [eliminando, setEliminando] = useState(null)  // insumo a eliminar
+  const [verEnPlatos, setVerEnPlatos] = useState(null)  // insumo a ver en platos
   const [toast, setToast] = useState(null)
   const [errorCarga, setErrorCarga] = useState('')
 
@@ -134,6 +135,9 @@ export default function Insumos() {
             </div>
             <div className="ins-actions">
               <button className="ins-edit" onClick={() => setEditando(i)}>Editar</button>
+              <button className="ins-edit ghost" onClick={() => setVerEnPlatos(i)} title="Ver en platos">
+                <Icono nombre="buscar" size={16} />
+              </button>
               <button className="ins-delete" onClick={() => setEliminando(i)} title="Eliminar insumo">
                 <Icono nombre="papelera" size={16} />
               </button>
@@ -166,6 +170,13 @@ export default function Insumos() {
           insumo={eliminando}
           onClose={() => setEliminando(null)}
           onEliminado={() => { setEliminando(null); cargar(); mostrarToast('Insumo eliminado', null) }}
+        />
+      )}
+
+      {verEnPlatos && (
+        <VerEnPlatos
+          insumo={verEnPlatos}
+          onClose={() => setVerEnPlatos(null)}
         />
       )}
 
@@ -497,6 +508,88 @@ function EliminarInsumo({ insumo, onClose, onEliminado }) {
             {eliminando ? 'Eliminando…' : 'Eliminar insumo'}
           </button>
         )}
+      </div>
+    </Modal>
+  )
+}
+
+function VerEnPlatos({ insumo, onClose }) {
+  const { esDueno } = useAuth()
+  const [platos, setPlatos] = useState(null)
+  const [error, setError] = useState('')
+  const [cargando, setCargando] = useState(true)
+
+  useEffect(() => {
+    async function cargar() {
+      setCargando(true)
+      setError('')
+      const { data, error: e } = await supabase.rpc('costeo_platos_que_usan_insumo', { p_insumo: insumo.id })
+      setCargando(false)
+      if (e) {
+        setError(e.message || 'No pudimos cargar los platos.')
+        return
+      }
+      setPlatos(data || [])
+    }
+    cargar()
+  }, [insumo.id])
+
+  const platosFinales = (platos || []).filter((p) => !p.es_subreceta)
+  const subrecetas = (platos || []).filter((p) => p.es_subreceta)
+
+  return (
+    <Modal titulo="Ver en platos" subtitulo={insumo.nombre} onClose={onClose} ancho={500}>
+      {cargando && <div className="f-hint">Cargando…</div>}
+
+      {error && <div className="f-error">{error}</div>}
+
+      {!cargando && !error && platos && platos.length === 0 && (
+        <div className="f-hint">Este insumo no se usa en ninguna receta todavía.</div>
+      )}
+
+      {!cargando && !error && platos && platos.length > 0 && (
+        <>
+          {platosFinales.length > 0 && (
+            <div style={{ marginBottom: 20 }}>
+              <div style={{ fontWeight: 600, marginBottom: 12, fontSize: '0.95rem', color: 'var(--ink)' }}>Platos</div>
+              <div className="usos-lista">
+                {platosFinales.map((p) => (
+                  <div className="usos-item" key={p.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                      <div style={{ fontWeight: 500 }}>{p.nombre}</div>
+                      {p.categoria && <div style={{ fontSize: '0.85rem', color: 'var(--ink-soft)' }}>{p.categoria}</div>}
+                    </div>
+                    {esDueno && p.costo != null && (
+                      <div style={{ fontSize: '0.95rem', fontWeight: 500, color: 'var(--brick)', whiteSpace: 'nowrap', marginLeft: 12 }}>
+                        {pesos(p.costo)}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {subrecetas.length > 0 && (
+            <div>
+              <div style={{ fontWeight: 600, marginBottom: 12, fontSize: '0.95rem', color: 'var(--ink)' }}>Usado en sub-recetas</div>
+              <div className="usos-lista">
+                {subrecetas.map((p) => (
+                  <div className="usos-item" key={p.id}>
+                    <div>
+                      <div style={{ fontWeight: 500 }}>{p.nombre}</div>
+                      {p.categoria && <div style={{ fontSize: '0.85rem', color: 'var(--ink-soft)' }}>{p.categoria}</div>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </>
+      )}
+
+      <div className="f-actions" style={{ marginTop: 20 }}>
+        <button className="btn btn-ghost" onClick={onClose}>Cerrar</button>
       </div>
     </Modal>
   )
