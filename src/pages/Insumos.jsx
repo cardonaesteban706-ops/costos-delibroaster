@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext'
 import Layout from '../components/Layout'
 import Modal from '../components/Modal'
 import Icono from '../components/Icono'
+import UsosDondeSeUsa from '../components/UsosDondeSeUsa'
 import { pesos, presentacionLegible, iniciales, UNIDADES_COMPRA, NOMBRE_BASE, redondea, haceTiempo, frescuraPrecio } from '../lib/formato'
 import './Insumos.css'
 
@@ -534,60 +535,15 @@ function VerEnPlatos({ insumo, onClose }) {
     cargar()
   }, [insumo.id])
 
-  const platosFinales = (platos || []).filter((p) => !p.es_subreceta)
-  const subrecetas = (platos || []).filter((p) => p.es_subreceta)
-
   return (
-    <Modal titulo="Ver en platos" subtitulo={insumo.nombre} onClose={onClose} ancho={500}>
-      {cargando && <div className="f-hint">Cargando…</div>}
-
-      {error && <div className="f-error">{error}</div>}
-
-      {!cargando && !error && platos && platos.length === 0 && (
-        <div className="f-hint">Este insumo no se usa en ninguna receta todavía.</div>
-      )}
-
-      {!cargando && !error && platos && platos.length > 0 && (
-        <>
-          {platosFinales.length > 0 && (
-            <div style={{ marginBottom: 20 }}>
-              <div style={{ fontWeight: 600, marginBottom: 12, fontSize: '0.95rem', color: 'var(--ink)' }}>Platos</div>
-              <div className="usos-lista">
-                {platosFinales.map((p) => (
-                  <div className="usos-item" key={p.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div>
-                      <div style={{ fontWeight: 500 }}>{p.nombre}</div>
-                      {p.categoria && <div style={{ fontSize: '0.85rem', color: 'var(--ink-soft)' }}>{p.categoria}</div>}
-                    </div>
-                    {esDueno && p.costo != null && (
-                      <div style={{ fontSize: '0.95rem', fontWeight: 500, color: 'var(--brick)', whiteSpace: 'nowrap', marginLeft: 12 }}>
-                        {pesos(p.costo)}
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {subrecetas.length > 0 && (
-            <div>
-              <div style={{ fontWeight: 600, marginBottom: 12, fontSize: '0.95rem', color: 'var(--ink)' }}>Usado en sub-recetas</div>
-              <div className="usos-lista">
-                {subrecetas.map((p) => (
-                  <div className="usos-item" key={p.id}>
-                    <div>
-                      <div style={{ fontWeight: 500 }}>{p.nombre}</div>
-                      {p.categoria && <div style={{ fontSize: '0.85rem', color: 'var(--ink-soft)' }}>{p.categoria}</div>}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </>
-      )}
-
+    <Modal titulo="¿Dónde se usa?" subtitulo={insumo.nombre} onClose={onClose} ancho={500}>
+      <UsosDondeSeUsa
+        items={platos}
+        cargando={cargando}
+        error={error}
+        mostrarCosto={esDueno}
+        vacioTexto="Este insumo no se usa en ninguna receta todavía."
+      />
       <div className="f-actions" style={{ marginTop: 20 }}>
         <button className="btn btn-ghost" onClick={onClose}>Cerrar</button>
       </div>
